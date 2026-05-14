@@ -1822,66 +1822,161 @@ function doDelete(){
   saveToLocal(); renderTable(); updateDashboard();
 }
 
-// ===== GOOGLE SHEETS =====
-function loadFromSheet(){
-  const sheetId=document.getElementById('sheetId').value.trim();
-  const sheetName=document.getElementById('sheetName').value.trim()||'Sheet1';
-  const statusEl=document.getElementById('gsStatus');
-  if(!sheetId){statusEl.innerHTML='<div class="status-msg status-err">กรุณากรอก Spreadsheet ID</div>';return;}
-  statusEl.innerHTML='<div class="status-msg status-info">⏳ กำลังโหลดข้อมูล...</div>';
-  const url=`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-  fetch(url).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(csv=>{
-    const rows=csv.trim().split('\n').map(r=>{
-      const result=[];let inQuote=false,cell='';
-      for(let i=0;i<r.length;i++){
-        if(r[i]==='"'){inQuote=!inQuote;}
-        else if(r[i]===','&&!inQuote){result.push(cell.trim());cell='';}
-        else{cell+=r[i];}
-      }
-      result.push(cell.trim()); return result;
-    });
-    if(rows.length<2){statusEl.innerHTML='<div class="status-msg status-err">ไม่พบข้อมูลใน Sheet</div>';return;}
-    const headers=rows[0].map(h=>h.toLowerCase().replace(/"/g,'').trim());
-    const col=name=>headers.indexOf(name);
-    const parsed=rows.slice(1).filter(r=>r.some(c=>c)).map((r,i)=>({
-      id:parseInt(r[col('id')])||i+1,
-      name:r[col('name')]||'โครงการ '+(i+1),
-      strategy:r[col('strategy')]||'1',
-      budget:parseFloat(r[col('budget')])||0,
-      spent:parseFloat(r[col('spent')])||0,
-      po:parseFloat(r[col('po')])||0,
-      status:r[col('status')]||'pending',
-      result:r[col('result')]||'',
-      kpi:(r[col('kpi')]||'').split('|').map(k=>k.trim()).filter(Boolean),
-      problems:r[col('problems')]||'',
-      solutions:r[col('solutions')]||'',
-      quarter:r[col('quarter')]||'all'
-    }));
-    if(!parsed.length){statusEl.innerHTML='<div class="status-msg status-err">ไม่พบข้อมูลที่ถูกต้อง</div>';return;}
-    projects=parsed;
-    statusEl.innerHTML=`<div class="status-msg status-ok">✅ โหลดสำเร็จ ${parsed.length} โครงการ</div>`;
-    saveToLocal(); renderTable(); updateDashboard();
-  }).catch(e=>statusEl.innerHTML=`<div class="status-msg status-err">❌ เกิดข้อผิดพลาด: ${e.message}<br>ตรวจสอบว่า Sheet ตั้งค่าเป็น "ใครก็ได้ที่มีลิงก์" แล้ว</div>`);
+// ============================================================
+//  วางโค้ดนี้แทนที่ส่วน "// ===== GOOGLE SHEETS =====" 
+//  ใน index.html (บรรทัดประมาณ 1825–1885)
+// ============================================================
+
+// ── URL ของ Google Apps Script Web App ───────────────────────
+// *** เปลี่ยน URL ด้านล่างให้ตรงกับที่ Deploy ได้ ***
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwMKmw5lvfAVU6ATPRSnXeY9g94JHcnJNIL5tlIGl4vSBiq025f0lj6q7O7kcbyJ4qnjg/exec';
+
+// ===== GOOGLE SHEETS (ผ่าน Apps Script) ======================
+
+// โหลดข้อมูลจาก Google Sheet
+function loadFromSheet() {
+  const statusEl = document.getElementById('gsStatus');
+  statusEl.innerHTML = '<div class="status-msg status-info">⏳ กำลังโหลดข้อมูล...</div>';
+
+  fetch(`${GAS_URL}?action=getAll`)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      projects = res.data;
+      statusEl.innerHTML = `<div class="status-msg status-ok">✅ โหลดสำเร็จ ${projects.length} โครงการ</div>`;
+      saveToLocal(); renderTable(); updateDashboard();
+    })
+    .catch(e => statusEl.innerHTML = `<div class="status-msg status-err">❌ ${e.message}</div>`);
 }
 
-function exportCSV(){
-  const headers=['id','name','strategy','budget','spent','po','status','result','kpi','problems','solutions','quarter'];
-  const rows=[headers,...projects.map(p=>[
-    p.id,'"'+(p.name||'').replace(/"/g,'""')+'"',
-    p.strategy,p.budget||0,p.spent||0,p.po||0,p.status,
-    '"'+(p.result||'').replace(/"/g,'""')+'"',
-    '"'+(p.kpi||[]).join('|').replace(/"/g,'""')+'"',
-    '"'+(p.problems||'').replace(/"/g,'""')+'"',
-    '"'+(p.solutions||'').replace(/"/g,'""')+'"',
-    p.quarter||'all'
+// บันทึกโครงการใหม่ไปยัง Google Sheet
+function saveProjectToSheet(data) {
+  return fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'save', data })
+  }).then(r => r.json());
+}
+
+// อัปเดตโครงการที่มีอยู่
+function updateProjectToSheet(data) {
+  return fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'update', data })
+  }).then(r => r.json());
+}
+
+// ลบโครงการออกจาก Sheet
+function deleteProjectFromSheet(id) {
+  return fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'delete', id })
+  }).then(r => r.json());
+}
+
+// Sync ข้อมูลทั้งหมดขึ้น Sheet (เขียนทับ)
+function syncAllToSheet() {
+  const statusEl = document.getElementById('gsStatus');
+  statusEl.innerHTML = '<div class="status-msg status-info">⏳ กำลัง Sync ข้อมูล...</div>';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'bulkSave', data: projects })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      statusEl.innerHTML = `<div class="status-msg status-ok">✅ Sync สำเร็จ ${res.count} โครงการ</div>`;
+    })
+    .catch(e => statusEl.innerHTML = `<div class="status-msg status-err">❌ ${e.message}</div>`);
+}
+
+// ── แก้ไข saveProject() เดิม ให้ส่งขึ้น Sheet ด้วย ────────────
+// แทนที่ฟังก์ชัน saveProject() เดิมด้วยอันนี้:
+function saveProject() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { alert('กรุณากรอกชื่อโครงการ'); return; }
+
+  const data = {
+    name,
+    strategy: document.getElementById('fStrategy').value,
+    budget: parseFloat(document.getElementById('fBudget').value) || 0,
+    spent: parseFloat(document.getElementById('fSpent').value) || 0,
+    po: parseFloat(document.getElementById('fPO').value) || 0,
+    status: document.getElementById('fStatus').value,
+    quarter: document.getElementById('fQuarter').value,
+    result: document.getElementById('fResult').value.trim(),
+    kpi: [...tempKPIs],
+    problems: document.getElementById('fProblems').value.trim(),
+    solutions: document.getElementById('fSolutions').value.trim()
+  };
+
+  const statusEl = document.getElementById('gsStatus');
+
+  if (editingId) {
+    // อัปเดต
+    data.id = editingId;
+    const i = projects.findIndex(p => p.id === editingId);
+    if (i >= 0) projects[i] = { ...projects[i], ...data };
+    closeModal(); saveToLocal(); renderTable(); updateDashboard();
+
+    // Sync ขึ้น Sheet (ถ้ามี GAS_URL)
+    if (GAS_URL && !GAS_URL.includes('YOUR_DEPLOYMENT_ID')) {
+      updateProjectToSheet(data)
+        .then(res => {
+          if (statusEl) statusEl.innerHTML = res.success
+            ? '<div class="status-msg status-ok">✅ อัปเดต Sheet สำเร็จ</div>'
+            : `<div class="status-msg status-err">⚠️ บันทึก Local แล้ว แต่ Sheet: ${res.message}</div>`;
+        }).catch(() => {});
+    }
+  } else {
+    // เพิ่มใหม่
+    const maxId = projects.reduce((m, p) => Math.max(m, p.id), 0);
+    data.id = maxId + 1;
+    projects.push(data);
+    closeModal(); saveToLocal(); renderTable(); updateDashboard();
+
+    if (GAS_URL && !GAS_URL.includes('YOUR_DEPLOYMENT_ID')) {
+      saveProjectToSheet(data)
+        .then(res => {
+          if (statusEl) statusEl.innerHTML = res.success
+            ? `<div class="status-msg status-ok">✅ บันทึก Sheet สำเร็จ (ID: ${res.id})</div>`
+            : `<div class="status-msg status-err">⚠️ บันทึก Local แล้ว แต่ Sheet: ${res.message}</div>`;
+        }).catch(() => {});
+    }
+  }
+}
+
+// ── แก้ไข doDelete() ให้ลบจาก Sheet ด้วย ─────────────────────
+function doDelete() {
+  const id = deleteId;
+  projects = projects.filter(p => p.id !== id);
+  document.getElementById('deleteOverlay').classList.remove('open');
+  saveToLocal(); renderTable(); updateDashboard();
+
+  if (GAS_URL && !GAS_URL.includes('YOUR_DEPLOYMENT_ID')) {
+    deleteProjectFromSheet(id).catch(() => {});
+  }
+}
+
+// ── Export CSV (เดิม ไม่เปลี่ยน) ─────────────────────────────
+function exportCSV() {
+  const headers = ['id', 'name', 'strategy', 'budget', 'spent', 'po', 'status', 'result', 'kpi', 'problems', 'solutions', 'quarter'];
+  const rows = [headers, ...projects.map(p => [
+    p.id, '"' + (p.name || '').replace(/"/g, '""') + '"',
+    p.strategy, p.budget || 0, p.spent || 0, p.po || 0, p.status,
+    '"' + (p.result || '').replace(/"/g, '""') + '"',
+    '"' + (p.kpi || []).join('|').replace(/"/g, '""') + '"',
+    '"' + (p.problems || '').replace(/"/g, '""') + '"',
+    '"' + (p.solutions || '').replace(/"/g, '""') + '"',
+    p.quarter || 'all'
   ])];
-  const csv=rows.map(r=>r.join(',')).join('\n');
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='รายงานผลดำเนินงาน_DLTV_2569.csv';
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'รายงานผลดำเนินงาน_DLTV_2569.csv';
   a.click();
-  document.getElementById('gsStatus').innerHTML='<div class="status-msg status-ok">✅ ดาวน์โหลด CSV สำเร็จ</div>';
+  document.getElementById('gsStatus').innerHTML = '<div class="status-msg status-ok">✅ ดาวน์โหลด CSV สำเร็จ</div>';
 }
 
 // ===== KEYBOARD =====
