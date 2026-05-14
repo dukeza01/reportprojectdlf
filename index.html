@@ -212,7 +212,6 @@ body {
 }
 
 .metric-card {
-  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem 1.125rem;
@@ -228,15 +227,25 @@ body {
   height: 100%;
   border-radius: 4px 0 0 4px;
 }
-.metric-card.c-blue::before { background: var(--accent); }
-.metric-card.c-green::before { background: var(--green); }
-.metric-card.c-amber::before { background: var(--amber); }
+.metric-card.c-blue   { background: linear-gradient(135deg, #eef2fd 0%, #dce8ff 100%); border-color: #bfcff8; }
+.metric-card.c-green  { background: linear-gradient(135deg, #e6f7ef 0%, #ccf0de 100%); border-color: #86d9b0; }
+.metric-card.c-amber  { background: linear-gradient(135deg, #fff8e6 0%, #fde9bb 100%); border-color: #f6cc70; }
+.metric-card.c-purple { background: linear-gradient(135deg, #f3effe 0%, #e5d8fd 100%); border-color: #c4a8f8; }
+.metric-card.c-teal   { background: linear-gradient(135deg, #ecfeff 0%, #cff8fd 100%); border-color: #7ed9e8; }
+.metric-card.c-red    { background: linear-gradient(135deg, #fff0f0 0%, #fdd8d8 100%); border-color: #f5a5a5; }
+.metric-card.c-done     { background: linear-gradient(135deg, #e6f7ef 0%, #ccf0de 100%); border-color: #86d9b0; }
+.metric-card.c-progress { background: linear-gradient(135deg, #eef2fd 0%, #dce8ff 100%); border-color: #bfcff8; }
+.metric-card.c-pending  { background: linear-gradient(135deg, #f9fafb 0%, #f0f2f5 100%); border-color: var(--border); }
+
+.metric-card.c-blue::before   { background: var(--accent); }
+.metric-card.c-green::before  { background: var(--green); }
+.metric-card.c-amber::before  { background: var(--amber); }
 .metric-card.c-purple::before { background: var(--purple); }
-.metric-card.c-teal::before { background: var(--s5); }
-.metric-card.c-red::before { background: var(--red); }
-.metric-card.c-done::before { background: #1a9a5c; }
+.metric-card.c-teal::before   { background: var(--s5); }
+.metric-card.c-red::before    { background: var(--red); }
+.metric-card.c-done::before     { background: #1a9a5c; }
 .metric-card.c-progress::before { background: #3b72f0; }
-.metric-card.c-pending::before { background: #9aa3b2; }
+.metric-card.c-pending::before  { background: #9aa3b2; }
 
 .metric-icon {
   width: 34px; height: 34px;
