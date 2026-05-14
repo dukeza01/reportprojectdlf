@@ -335,7 +335,17 @@ body {
   grid-template-columns: 1fr auto;
   gap: 10px;
   align-items: start;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+  text-decoration: none;
+  color: inherit;
 }
+.strategy-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent);
+}
+.strategy-card:hover .strategy-card-name { color: var(--accent); }
 .strategy-card-left {}
 .strategy-card-name { font-size: 13px; font-weight: 700; }
 .strategy-card-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
@@ -1244,6 +1254,14 @@ function filterByStatus(status) {
   renderTable();
 }
 
+function goToStrategy(s) {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.remove('active');
+    if(el.getAttribute('onclick') && el.getAttribute('onclick').includes("'projects'")) el.classList.add('active');
+  });
+  showPage('projects', s);
+}
+
 // ===== DASHBOARD =====
 function updateDashboard() {
   const fp = getFilteredProjects();
@@ -1321,7 +1339,7 @@ function renderStrategyCards(fp) {
     const prog = ps.filter(p=>p.status==='progress').length;
     const pend = ps.filter(p=>p.status==='pending').length;
     const barColor = pct>=90?'var(--red)': pct>=70?'var(--amber)': S_COLORS[s];
-    return `<div class="strategy-card">
+    return `<div class="strategy-card" onclick="goToStrategy('${s}')" title="คลิกเพื่อดูโครงการในยุทธศาสตร์นี้">
       <div class="strategy-card-left">
         <div class="strategy-card-name"><span class="badge ${S_BADGE[s]}">${S_NAMES[s]}</span> <span style="font-weight:500;font-size:12px;color:var(--text2)">${S_FULL[s]}</span></div>
         <div class="strategy-card-sub">${ps.length} โครงการ · งบอนุมัติ <strong>${fmt(budget)}</strong> บาท · คงเหลือ <strong style="color:${remaining<0?'var(--red)':'var(--green)'}">${fmt(remaining)}</strong> บาท</div>
@@ -1335,9 +1353,12 @@ function renderStrategyCards(fp) {
           </div>
         </div>
       </div>
-      <div class="strategy-card-right">
-        <div class="strategy-pct" style="color:${barColor}">${pct}%</div>
-        <div class="strategy-budget-txt">เบิกจ่าย+PO</div>
+      <div class="strategy-card-right" style="display:flex;align-items:center;gap:10px">
+        <div>
+          <div class="strategy-pct" style="color:${barColor}">${pct}%</div>
+          <div class="strategy-budget-txt">เบิกจ่าย+PO</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${barColor}" stroke-width="2.5" style="opacity:.6;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
     </div>`;
   }).join('');
