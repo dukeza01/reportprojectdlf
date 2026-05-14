@@ -1841,7 +1841,7 @@ function doDelete(){
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxjh2U6DnfpOnd6zI1mgWmoKNN3j4SPuSSetcETnrTjXjvbmz2xnXWWYwzFu3YksN_9AA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwvHbX8Z0LbLdN5gX-88j4O4Ma7iDm-HSWV2bd2RWE2d-KJAE3Xup2T1GpRN-Kkt1bI/exec';
 let _gasUrl = localStorage.getItem('gasUrl') || (GAS_URL.includes('YOUR_DEPLOYMENT_ID') ? '' : GAS_URL);
 let GAS_ENABLED = !!_gasUrl;
 
@@ -1922,11 +1922,12 @@ function exportCSV(){
 // ===== KEYBOARD =====
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    closeModal(); closeDetail();
+    // modalOverlay (form กรอกข้อมูล) — ไม่ปิดด้วย Escape เพื่อป้องกันข้อมูลหาย
+    closeDetail();
     document.getElementById('deleteOverlay').classList.remove('open');
   }
 });
-document.getElementById('modalOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(); });
+// modalOverlay: ลบ click-outside ออก — ปิดได้แค่ปุ่ม "ยกเลิก" หรือ "บันทึก" เท่านั้น
 document.getElementById('detailOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeDetail(); });
 document.getElementById('deleteOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
 
