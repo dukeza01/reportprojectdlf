@@ -2252,9 +2252,12 @@ function openDetail(id){
       <div class="detail-section-title">📸 รูปภาพประกอบการดำเนินงาน (${p.images.length} รูป)</div>
       <div class="detail-img-gallery">
         ${p.images.map((img,i)=>{
-          const src = img.url || img.dataUrl || '';
+          const src = driveImgUrl(img);
+          const id  = img.driveId||'';
           return `<div class="detail-img-item" onclick="openDetailImgLightbox(${p.id},${i})" title="${escapeHtml(img.name||'')}">
-            <img src="${src}" alt="${escapeHtml(img.name||'รูปภาพ')}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><rect width=%2280%22 height=%2280%22 fill=%22%23eee%22/><text x=%2240%22 y=%2244%22 text-anchor=%22middle%22 font-size=%2212%22 fill=%22%23999%22>❌</text></svg>'">
+            <img src="${src}" alt="${escapeHtml(img.name||'รูปภาพ')}"
+              data-drive-id="${id}" data-tried="0"
+              onerror="onImgError(this)">
           </div>`;
         }).join('')}
       </div>
@@ -2264,9 +2267,35 @@ function openDetail(id){
 }
 function closeDetail(){ document.getElementById('detailOverlay').classList.remove('open'); }
 function escapeHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+
+// แปลง driveId เป็น URL หลายรูปแบบสำหรับ fallback
+function driveImgUrl(img){
+  if(!img) return '';
+  // ถ้า url มีอยู่แล้วและไม่ใช่ thumbnail เก่า → ใช้เลย
+  if(img.url && !img.url.includes('thumbnail?id=')) return img.url;
+  // สร้าง lh3 URL จาก driveId
+  if(img.driveId) return 'https://lh3.googleusercontent.com/d/' + img.driveId;
+  // fallback dataUrl (ข้อมูลเก่า)
+  return img.dataUrl || img.url || '';
+}
+
+function onImgError(el, img){
+  // fallback chain: lh3 → uc export → thumbnail
+  const id = el.dataset.driveId;
+  const tried = parseInt(el.dataset.tried||'0');
+  const fallbacks = [
+    'https://lh3.googleusercontent.com/d/' + id,
+    'https://drive.google.com/uc?export=view&id=' + id,
+    'https://drive.google.com/thumbnail?id=' + id + '&sz=w800'
+  ];
+  if(tried < fallbacks.length){
+    el.dataset.tried = tried + 1;
+    el.src = fallbacks[tried];
+  }
+}
 function openDetailImgLightbox(projectId, idx){
   const p = projects.find(x=>x.id==projectId); if(!p||!p.images) return;
-  openLightboxGallery(p.images.map(i=>i.url||i.dataUrl||''), idx);
+  openLightboxGallery(p.images.map(i=>driveImgUrl(i)), idx);
 }
 
 // ===== DELETE =====
@@ -2385,7 +2414,7 @@ function renderImgPreview(){
   if(!tempImages.length){ grid.innerHTML=''; info.style.display='none'; return; }
 
   grid.innerHTML = tempImages.map((img, i) => {
-    const src = img._dataUrl || img.url || '';
+    const src = img._dataUrl || driveImgUrl(img) || '';
     const uploading = img._uploading;
     const hasError  = img._driveError;
     return `
@@ -2747,7 +2776,7 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzADW8qDwseO8VEJDKspcjCP1fX-dNWkrsaDkd_wjf5vjhZPsrgZuSNQFuSRtC9hNzTPQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxlp6pus5fEzEjOTGYiU6HZAzCO-WMDUed-pemPKeJwV-UByOAc61dXg4ov9P4Ll1BP/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
