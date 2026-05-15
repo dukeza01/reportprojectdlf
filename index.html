@@ -1528,8 +1528,8 @@ function onQuarterChange() {
 }
 
 // ===== STORAGE =====
-function saveToLocal() {
-  try { localStorage.setItem('dltv_projects_2569_v2', JSON.stringify(projects)); showToast('💾 บันทึกข้อมูลแล้ว'); } catch(e){}
+function saveToLocal(silent) {
+  try { localStorage.setItem('dltv_projects_2569_v2', JSON.stringify(projects)); if(!silent) showToast('💾 บันทึกข้อมูลแล้ว'); } catch(e){}
 }
 function loadFromLocal() {
   try {
@@ -2787,7 +2787,7 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4TTBdHI56NlQLuU901AgblZutusCUPxymeAo0E39WA5z178le5FZsRSiD7qlDUxhiUg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw7vDqsMSi0fTwFckxy-CNd2rQjBMwKf4nenQuUhLvzVAb9IP3GpvIFym1R2jSQoDcCqw/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
@@ -3029,18 +3029,16 @@ document.getElementById('deleteOverlay').addEventListener('click',e=>{ if(e.targ
   _initGasUI();
   const overlay = document.getElementById('initLoadingOverlay');
 
-  function showApp(){
-    if(overlay) overlay.style.display='none';
-    updateDashboard();
-  }
+  // ── แสดงข้อมูลทันทีก่อนเสมอ ──
+  // ลำดับ: LocalStorage → default data ในโค้ด
+  loadFromLocal();
+  // ซ่อน overlay และ render ทันที ไม่รอ Sheet
+  if(overlay) overlay.style.display='none';
+  updateDashboard();
 
-  // โหลด LocalStorage ก่อนเพื่อแสดงข้อมูลทันที (ไม่รอ Sheet)
-  const hasLocal = loadFromLocal();
-
+  // ── โหลด Sheet แบบ background (ไม่บล็อก UI) ──
   if(GAS_ENABLED && _gasUrl && !_gasUrl.includes('YOUR_GAS')){
-    // ถ้าไม่มี LocalStorage → แสดง overlay รอโหลด Sheet
-    if(!hasLocal && overlay) overlay.style.display='flex';
-    else showApp(); // แสดงข้อมูล local ก่อน แล้ว refresh เงียบๆ
+    const st = document.getElementById('gsStatus');
 
     fetch(`${_gasUrl}?action=getAll`)
       .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
@@ -3048,25 +3046,15 @@ document.getElementById('deleteOverlay').addEventListener('click',e=>{ if(e.targ
         if(!res.success) throw new Error(res.message||'GAS error');
         if(res.data && res.data.length > 0){
           projects = res.data;
-          saveToLocal();
+          saveToLocal(true); // silent — ไม่แสดง toast ตอน sync background
+          updateDashboard(); // refresh เงียบๆ หลังได้ข้อมูลใหม่
         }
-        showApp();
-        const st=document.getElementById('gsStatus');
-        if(st) st.innerHTML=`<div class="status-msg status-ok">✅ โหลดสำเร็จ ${projects.length} โครงการจาก Google Sheet</div>`;
+        if(st) st.innerHTML=`<div class="status-msg status-ok">✅ Sync สำเร็จ ${projects.length} โครงการจาก Google Sheet</div>`;
       })
       .catch(err=>{
-        console.warn('Sheet load failed:', err.message);
-        // ถ้ายังไม่ได้ showApp (กรณีไม่มี local)
-        if(!hasLocal){
-          // ใช้ default data ที่ฝังในโค้ด (projects ยังเป็น default array)
-        }
-        showApp();
-        const st=document.getElementById('gsStatus');
-        if(st) st.innerHTML=`<div class="status-msg status-err">⚠️ โหลดจาก Sheet ไม่ได้ (${err.message}) — ใช้ข้อมูลในเครื่องแทน</div>`;
+        console.warn('Sheet sync failed:', err.message);
+        if(st) st.innerHTML=`<div class="status-msg status-err">⚠️ ไม่สามารถ Sync จาก Sheet ได้ — กำลังใช้ข้อมูลในเครื่อง (${err.message})</div>`;
       });
-  } else {
-    // ไม่มี GAS → ใช้ local หรือ default
-    showApp();
   }
 })();
 </script>
