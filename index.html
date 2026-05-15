@@ -777,6 +777,8 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
   .form-grid { grid-template-columns: 1fr; }
   .detail-grid { grid-template-columns: 1fr 1fr; }
   .status-pipeline { flex-direction: column; }
+  #committeeMetrics { grid-template-columns: 1fr 1fr !important; }
+  #committeeSummaryCard .card-body > div[style*="grid-template-columns:1fr 1.6fr"] { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 640px) {
   .sidebar { display: none; }
@@ -1031,6 +1033,51 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
             </table>
           </div>
         </div>
+
+        <!-- ===== COMMITTEE BUDGET SECTION ===== -->
+        <div class="card" style="margin-bottom:1.25rem" id="committeeSummaryCard">
+          <div class="card-header" style="flex-wrap:wrap;gap:.5rem">
+            <span class="card-title">🏛️ สรุปงบประมาณแยกตามอนุกรรมการ</span>
+            <span style="font-size:11px;color:var(--text3)" id="committeeQuarterLabel">ปีงบประมาณ พ.ศ. 2569</span>
+          </div>
+          <div class="card-body" style="padding:.875rem 1.25rem">
+
+            <!-- Committee metric cards -->
+            <div id="committeeMetrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem"></div>
+
+            <!-- Committee bar chart + table side by side -->
+            <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:14px;align-items:start">
+
+              <!-- Stacked bar chart -->
+              <div class="card" style="border:1px solid var(--border);padding:.875rem">
+                <div style="font-size:12px;font-weight:700;margin-bottom:.75rem;color:var(--text2)">สัดส่วนงบอนุมัติ</div>
+                <div style="position:relative;height:220px"><canvas id="chartCommitteeBudget"></canvas></div>
+                <div id="chartCommitteeLegend" style="display:flex;flex-direction:column;gap:5px;margin-top:.75rem"></div>
+              </div>
+
+              <!-- Detail table -->
+              <div style="overflow-x:auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="min-width:160px">อนุกรรมการ</th>
+                      <th style="text-align:center">โครงการ</th>
+                      <th class="td-num">งบอนุมัติ (บาท)</th>
+                      <th class="td-num">ใช้ไป (บาท)</th>
+                      <th class="td-num">PO (บาท)</th>
+                      <th class="td-num">คงเหลือสุทธิ (บาท)</th>
+                      <th style="min-width:110px">% ใช้งบ</th>
+                      <th style="text-align:center">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="committeeTableBody"></tbody>
+                </table>
+              </div>
+
+            </div><!-- /grid -->
+
+          </div>
+        </div><!-- /committee card -->
 
       </div><!-- /page-dashboard -->
 
@@ -1437,7 +1484,7 @@ const Q_LABEL = {all:'ทุกไตรมาส','1':'ไตรมาส 1 (�
 let editingId = null, deleteId = null, currentPage = 1;
 const PAGE_SIZE = 10;
 let tempKPIs = [];
-let chartBudget = null, chartStatus = null, chartUtilization = null, chartBudgetGauge = null;
+let chartBudget = null, chartStatus = null, chartUtilization = null, chartBudgetGauge = null, chartCommitteeBudget = null;
 let currentQuarter = 'all';
 
 // ===== UTILS =====
@@ -1561,7 +1608,8 @@ function updateDashboard() {
   renderBudgetBar(fp, tb, totalSpent, totalPo, totalRemaining);
   renderStrategyCards(fp);
   renderSummaryTable(fp);
-  requestAnimationFrame(()=>{ renderCharts(fp); renderUtilizationChart(fp); });
+  renderCommitteeSection(fp);
+  requestAnimationFrame(()=>{ renderCharts(fp); renderUtilizationChart(fp); renderCommitteeChart(fp); });
 }
 
 function renderBudgetBar(fp, tb, ts, tp, rem) {
@@ -2327,10 +2375,271 @@ document.addEventListener('click', e=>{
   }
 });
 
+// ===== COMMITTEE SUMMARY =====
+
+const COM_LIST = [
+  { key: 'นโยบายและแผนงาน',           label: 'ด้านนโยบายและแผนงาน',           color: '#3b72f0', colorLight: '#eef2fd', icon: '📋' },
+  { key: 'วิชาการ',                    label: 'ด้านวิชาการ',                   color: '#059669', colorLight: '#ecfdf5', icon: '📚' },
+  { key: 'เทคนิคและเทคโนโลยีดิจิทัล', label: 'ด้านเทคนิคและเทคโนโลยีดิจิทัล', color: '#d97706', colorLight: '#fffbeb', icon: '💻' },
+  { key: 'บริหารงานบุคคล',             label: 'ด้านบริหารงานบุคคล',             color: '#9333ea', colorLight: '#faf5ff', icon: '👥' },
+];
+// โครงการที่ไม่ถูก assign อนุกรรมการ
+const COM_UNASSIGNED = { key: '__none__', label: 'ไม่ได้ระบุอนุกรรมการ', color: '#9aa3b2', colorLight: '#f9fafb', icon: '—' };
+
+function _getCommittees(p) {
+  // committees อาจเป็น array ของ string หรือ object {name, role}
+  const raw = p.committees || [];
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  return raw.map(c => (typeof c === 'string' ? c : (c.name || c.key || ''))).filter(Boolean);
+}
+
+// คำนวณ stats per committee key
+function _comStats(fp) {
+  const map = {};
+  [...COM_LIST, COM_UNASSIGNED].forEach(c => {
+    map[c.key] = { projects: [], budget: 0, spent: 0, po: 0, done: 0, progress: 0, pending: 0 };
+  });
+
+  fp.forEach(p => {
+    const coms = _getCommittees(p);
+    const targets = coms.length > 0 ? coms : [COM_UNASSIGNED.key];
+    // โครงการ 1 โครงการอาจอยู่ในหลายอนุกรรมการ — นับโครงการซ้ำได้ แต่งบประมาณ pro-rate
+    const share = 1 / targets.length;
+    targets.forEach(key => {
+      const validKey = COM_LIST.find(c => c.key === key) ? key : COM_UNASSIGNED.key;
+      const d = map[validKey];
+      if (!d.projects.includes(p.id)) d.projects.push(p.id);
+      d.budget  += (p.budget || 0) * share;
+      d.spent   += (p.spent  || 0) * share;
+      d.po      += (p.po     || 0) * share;
+      if (p.status === 'done')     d.done++;
+      else if (p.status === 'progress') d.progress++;
+      else d.pending++;
+    });
+  });
+  return map;
+}
+
+function renderCommitteeSection(fp) {
+  const qEl = document.getElementById('committeeQuarterLabel');
+  if (qEl) qEl.textContent = Q_LABEL[currentQuarter] + ' · ปีงบประมาณ พ.ศ. 2569';
+
+  const map = _comStats(fp);
+  const totalBudget = fp.reduce((a, p) => a + (p.budget || 0), 0);
+
+  // ── Metric cards ──
+  const metricsEl = document.getElementById('committeeMetrics');
+  if (metricsEl) {
+    metricsEl.innerHTML = COM_LIST.map(c => {
+      const d = map[c.key];
+      const pct = d.budget > 0 ? Math.round((d.spent + d.po) / d.budget * 100) : 0;
+      const remaining = d.budget - d.spent - d.po;
+      const barColor = pct >= 90 ? 'var(--red)' : pct >= 70 ? 'var(--amber)' : c.color;
+      return `
+        <div class="metric-card" style="background:linear-gradient(135deg,${c.colorLight},${c.colorLight});border-color:${c.color}33;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${c.color};border-radius:4px 0 0 4px"></div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <span style="font-size:18px">${c.icon}</span>
+            <span style="font-size:10.5px;font-weight:700;color:${c.color};line-height:1.3">อนุกรรมการ<br>${c.label}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">งบอนุมัติ</div>
+          <div style="font-size:20px;font-weight:800;color:${c.color};line-height:1.1;margin-bottom:3px">${fmt(d.budget)}</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${d.projects.length} โครงการ · คงเหลือ <strong style="color:${remaining < 0 ? 'var(--red)' : 'var(--green)'}">${fmt(remaining)}</strong></div>
+          <div style="height:4px;background:var(--surface2);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${Math.min(pct, 100)}%;background:${barColor};border-radius:99px;transition:width .5s"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">ใช้+PO: ${pct}%</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Detail table ──
+  const tbody = document.getElementById('committeeTableBody');
+  if (!tbody) return;
+
+  const allComs = [...COM_LIST, COM_UNASSIGNED];
+  const rows = allComs.map((c, idx) => {
+    const d = map[c.key];
+    if (d.projects.length === 0 && c.key === COM_UNASSIGNED.key) return ''; // ซ่อนถ้าไม่มี
+    const remaining = d.budget - d.spent - d.po;
+    const pct = d.budget > 0 ? Math.round((d.spent + d.po) / d.budget * 100) : 0;
+    const barColor = pct >= 90 ? '#dc2626' : pct >= 70 ? '#d97706' : c.color;
+    const budgetShare = totalBudget > 0 ? Math.round(d.budget / totalBudget * 100) : 0;
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="font-size:15px">${c.icon}</span>
+          <div>
+            <div style="font-weight:700;font-size:12px;color:${c.color}">${c.label}</div>
+            <div style="font-size:10px;color:var(--text3)">สัดส่วนงบ ${budgetShare}% ของภาพรวม</div>
+          </div>
+        </div>
+      </td>
+      <td style="text-align:center">${d.projects.length}</td>
+      <td class="td-num">${fmtFull(Math.round(d.budget))}</td>
+      <td class="td-num">${fmtFull(Math.round(d.spent))}</td>
+      <td class="td-num">${fmtFull(Math.round(d.po))}</td>
+      <td class="td-num" style="${remaining < 0 ? 'color:var(--red)' : ''}">${fmtFull(Math.round(remaining))}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="flex:1;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${Math.min(pct, 100)}%;background:${barColor};border-radius:99px;transition:width .5s"></div>
+          </div>
+          <span style="font-size:11px;color:var(--text2);min-width:32px;text-align:right">${pct}%</span>
+        </div>
+      </td>
+      <td style="text-align:center;font-size:12px">
+        <span style="color:var(--green);margin-right:3px">✅${d.done}</span>
+        <span style="color:var(--accent);margin-right:3px">⏳${d.progress}</span>
+        <span style="color:var(--text3)">○${d.pending}</span>
+      </td>
+    </tr>`;
+  }).filter(Boolean);
+
+  // Total row
+  const totBudget  = allComs.reduce((a, c) => a + map[c.key].budget, 0);
+  const totSpent   = allComs.reduce((a, c) => a + map[c.key].spent, 0);
+  const totPo      = allComs.reduce((a, c) => a + map[c.key].po, 0);
+  const totRem     = totBudget - totSpent - totPo;
+  const totPct     = totBudget > 0 ? Math.round((totSpent + totPo) / totBudget * 100) : 0;
+  const totProj    = fp.length;
+  rows.push(`<tr style="background:var(--surface2);font-weight:700">
+    <td>รวมทั้งหมด (${COM_LIST.length} อนุกรรมการ)</td>
+    <td style="text-align:center">${totProj}</td>
+    <td class="td-num">${fmtFull(Math.round(totBudget))}</td>
+    <td class="td-num">${fmtFull(Math.round(totSpent))}</td>
+    <td class="td-num">${fmtFull(Math.round(totPo))}</td>
+    <td class="td-num" style="${totRem < 0 ? 'color:var(--red)' : ''}">${fmtFull(Math.round(totRem))}</td>
+    <td>
+      <div style="display:flex;align-items:center;gap:7px">
+        <div style="flex:1;height:5px;background:var(--border2);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(totPct, 100)}%;background:var(--accent);border-radius:99px"></div>
+        </div>
+        <span style="font-size:11px;color:var(--text2);min-width:32px;text-align:right">${totPct}%</span>
+      </div>
+    </td>
+    <td style="text-align:center;font-size:12px">
+      <span style="color:var(--green);margin-right:3px">✅${fp.filter(p=>p.status==='done').length}</span>
+      <span style="color:var(--accent);margin-right:3px">⏳${fp.filter(p=>p.status==='progress').length}</span>
+      <span style="color:var(--text3)">○${fp.filter(p=>p.status==='pending').length}</span>
+    </td>
+  </tr>`);
+
+  tbody.innerHTML = rows.join('');
+}
+
+function renderCommitteeChart(fp) {
+  const map = _comStats(fp);
+  const chartFont = { family: "'Sarabun', sans-serif", size: 11 };
+
+  // destroy & recreate canvas
+  const old = document.getElementById('chartCommitteeBudget');
+  if (!old) return;
+  const clone = document.createElement('canvas');
+  clone.id = 'chartCommitteeBudget';
+  old.parentNode.replaceChild(clone, old);
+
+  const labels  = COM_LIST.map(c => c.label.replace('ด้าน', ''));
+  const budgets = COM_LIST.map(c => Math.round(map[c.key].budget));
+  const spents  = COM_LIST.map(c => Math.round(map[c.key].spent));
+  const pos     = COM_LIST.map(c => Math.round(map[c.key].po));
+  const rems    = COM_LIST.map((c, i) => Math.max(budgets[i] - spents[i] - pos[i], 0));
+  const colors  = COM_LIST.map(c => c.color);
+
+  chartCommitteeBudget = new Chart(clone, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'ใช้ไปแล้ว',
+          data: spents,
+          backgroundColor: colors.map(c => c + 'cc'),
+          borderColor: colors,
+          borderWidth: 0,
+          borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 6, bottomRight: 6 },
+          borderSkipped: false
+        },
+        {
+          label: 'PO ผูกพัน',
+          data: pos,
+          backgroundColor: ['#d97706cc', '#d97706cc', '#d97706cc', '#d97706cc'],
+          borderWidth: 0,
+          borderRadius: 0,
+          borderSkipped: false
+        },
+        {
+          label: 'คงเหลือ',
+          data: rems,
+          backgroundColor: ['#e2e8f0bb', '#e2e8f0bb', '#e2e8f0bb', '#e2e8f0bb'],
+          borderWidth: 0,
+          borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
+          borderSkipped: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(28,35,51,.92)',
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('th-TH')} บาท`
+          },
+          bodyFont: chartFont,
+          titleFont: { ...chartFont, weight: '700' }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { font: { family: "'Sarabun', sans-serif", size: 10 }, color: '#5a6477', maxRotation: 0 },
+          border: { display: false }
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,.04)' },
+          border: { display: false },
+          ticks: {
+            font: chartFont,
+            color: '#9aa3b2',
+            callback: v => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v
+          }
+        }
+      },
+      animation: { duration: 600 }
+    }
+  });
+
+  // Legend
+  const leg = document.getElementById('chartCommitteeLegend');
+  if (leg) {
+    leg.innerHTML = [
+      ['', 'งบอนุมัติแยกตามอนุกรรมการ', ''],
+      ...COM_LIST.map((c, i) => [c.color, c.label.replace('ด้าน', ''), fmtFull(budgets[i]) + ' บาท'])
+    ].slice(1).map(([color, label, val]) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span>
+          <span style="font-size:11px;color:var(--text2)">${label}</span>
+        </div>
+        <span style="font-weight:700;font-size:12px;color:var(--text)">${val}</span>
+      </div>`).join('');
+  }
+}
+
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzCT3KxAtxwfLE71vmP4A3vc-hoK5xOmIVV1T62Ip6F1S_3GfgWO32dmxj5JgVhD_-dZA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJbOC05KrEBcrwCA2KSgMS2H6cYEFk9o1XAnFK9AlCSEEDirjl7H2tnhmbuahgIAzo/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
