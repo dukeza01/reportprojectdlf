@@ -2364,53 +2364,48 @@ function addImagesToTemp(files){
     tempImages.push(placeholder);
     renderImgPreview();
 
-    // อ่านเป็น base64
-    const reader = new FileReader();
-    reader.onload = ev => {
-      // resize ก่อน upload เพื่อลดขนาด
-      resizeImage(file, 800).then(base64Full => {
-        placeholder._dataUrl = base64Full;
+    // resize ก่อน upload เพื่อลดขนาด (อ่านไฟล์ครั้งเดียว ไม่ซ้ำซ้อน)
+    resizeImage(file, 800).then(base64Full => {
+      placeholder._dataUrl = base64Full;
+      renderImgPreview();
+
+      if(!GAS_ENABLED || !_gasUrl){
+        placeholder.url = base64Full;
+        placeholder._uploading = false;
         renderImgPreview();
+        showToast('⚠️ ยังไม่ได้ตั้งค่า GAS — รูปจะใช้ได้เฉพาะเครื่องนี้');
+        return;
+      }
 
-        if(!GAS_ENABLED || !_gasUrl){
-          placeholder.url = base64Full;
-          placeholder._uploading = false;
-          renderImgPreview();
-          showToast('⚠️ ยังไม่ได้ตั้งค่า GAS — รูปจะใช้ได้เฉพาะเครื่องนี้');
-          return;
-        }
+      const b64data  = base64Full.split(',')[1];
+      const mimeType = file.type || 'image/jpeg';
 
-        const b64data  = base64Full.split(',')[1];
-        const mimeType = file.type || 'image/jpeg';
-
-        function doUpload(attempt){
-          gasUpload(b64data, mimeType, file.name)
-            .then(res => {
-              if(!res || !res.success) throw new Error((res&&res.message)||'GAS error');
-              placeholder.url      = res.url;
-              placeholder.driveId  = res.driveId;
+      function doUpload(attempt){
+        gasUpload(b64data, mimeType, file.name)
+          .then(res => {
+            if(!res || !res.success) throw new Error((res&&res.message)||'GAS error');
+            placeholder.url      = res.url;
+            placeholder.driveId  = res.driveId;
+            placeholder._uploading = false;
+            renderImgPreview();
+            showToast(`📸 "${file.name}" อัปโหลดสำเร็จ${attempt>1?' (retry)':''}`, 2500);
+          })
+          .catch(err => {
+            console.error(`Upload attempt ${attempt} failed:`, err.message);
+            if(attempt < 3){
+              showToast(`⏳ retry ${attempt}/2 — "${file.name}"`, 1500);
+              setTimeout(()=>doUpload(attempt+1), 2500);
+            } else {
+              placeholder.url = base64Full;
               placeholder._uploading = false;
+              placeholder._driveError = true;
               renderImgPreview();
-              showToast(`📸 "${file.name}" อัปโหลดสำเร็จ${attempt>1?' (retry)':''}`, 2500);
-            })
-            .catch(err => {
-              console.error(`Upload attempt ${attempt} failed:`, err.message);
-              if(attempt < 3){
-                showToast(`⏳ retry ${attempt}/2 — "${file.name}"`, 1500);
-                setTimeout(()=>doUpload(attempt+1), 2500);
-              } else {
-                placeholder.url = base64Full;
-                placeholder._uploading = false;
-                placeholder._driveError = true;
-                renderImgPreview();
-                showToast(`⚠️ อัปโหลดไม่สำเร็จหลัง 3 ครั้ง: ${err.message}`, 5000);
-              }
-            });
-        }
-        doUpload(1);
-      });
-    };
-    reader.readAsDataURL(file);
+              showToast(`⚠️ อัปโหลดไม่สำเร็จหลัง 3 ครั้ง: ${err.message}`, 5000);
+            }
+          });
+      }
+      doUpload(1);
+    });
   });
 }
 
@@ -2817,7 +2812,7 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzkv1Y74DPhx5E9p9qDFqli1JDDL7VxEnfU65Kh7dT2JsvVeHiBDe5i16BVFQTdTDNAfA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxOov2llDxRZp4dMewQZH10AG3ffkcPJqCdVcKoh4gLSwscYFSnop8hb6rYcltcyNyvDQ/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
@@ -2866,27 +2861,37 @@ function gasPost(action, payload){
 }
 
 // ── gasUpload: อัปโหลดรูปภาพแบบ chunk ผ่าน JSONP ─────────────
-// แบ่ง base64 เป็น chunk ≤ 1500 chars ต่อ request
-// (URL limit ของ GAS ประมาณ 2000 chars รวม base URL)
+// CHUNK = 7000 chars (จากเดิม 1500) → ลดจำนวน request ~4-5 เท่า
+// ส่ง chunks แบบ parallel (กลุ่มละ 5) ยกเว้น chunk สุดท้ายที่รอ assemble
 async function gasUpload(base64, mimeType, fileName){
-  const CHUNK = 1500;
+  const CHUNK    = 7000; // URL-safe limit หลังหัก base URL และ params อื่น
+  const PARALLEL = 5;    // ส่งพร้อมกัน 5 chunk ต่อรอบ
   const totalChunks = Math.ceil(base64.length / CHUNK);
   const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,7);
 
-  for(let i = 0; i < totalChunks; i++){
-    const chunk = base64.slice(i * CHUNK, (i + 1) * CHUNK);
-    const res = await gasJsonp({
-      action: 'uploadChunk',
-      uploadId,
-      chunk,
-      chunkIndex: String(i),
-      totalChunks: String(totalChunks),
-      mimeType,
-      fileName
-    });
-    if(!res || !res.success) throw new Error((res && res.message) || 'chunk ' + i + ' failed');
-    if(i === totalChunks - 1) return res;
+  // ส่ง chunks 0…(totalChunks-2) แบบ parallel เป็นกลุ่มๆ
+  const allButLast = totalChunks - 1;
+  for(let start = 0; start < allButLast; start += PARALLEL){
+    const end = Math.min(start + PARALLEL, allButLast);
+    const batch = [];
+    for(let i = start; i < end; i++){
+      const chunk = base64.slice(i * CHUNK, (i + 1) * CHUNK);
+      batch.push(gasJsonp({ action:'uploadChunk', uploadId, chunk,
+        chunkIndex: String(i), totalChunks: String(totalChunks), mimeType, fileName }));
+    }
+    const results = await Promise.all(batch);
+    for(const res of results){
+      if(!res || !res.success) throw new Error((res && res.message) || 'chunk failed');
+    }
   }
+
+  // chunk สุดท้าย → GAS assemble และคืนผล (url + driveId)
+  const lastIdx   = totalChunks - 1;
+  const lastChunk = base64.slice(lastIdx * CHUNK);
+  const finalRes  = await gasJsonp({ action:'uploadChunk', uploadId, chunk: lastChunk,
+    chunkIndex: String(lastIdx), totalChunks: String(totalChunks), mimeType, fileName });
+  if(!finalRes || !finalRes.success) throw new Error((finalRes && finalRes.message) || 'final chunk failed');
+  return finalRes;
 }
 
 function applyGasUrl(){
