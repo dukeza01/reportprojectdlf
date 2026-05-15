@@ -473,7 +473,7 @@ td { padding: 10px 11px; border-bottom: 1px solid var(--border); vertical-align:
 tr:last-child td { border-bottom: none; }
 tbody tr.data-row { cursor: pointer; transition: background .12s; }
 tbody tr.data-row:hover td { background: var(--accent-light); }
-tbody tr.data-row:hover .td-name span:first-child { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+tbody tr.data-row:hover .td-name span:first-child { color: var(--accent); }
 tbody tr.data-row:active td { background: #dce8ff; }
 .td-name { max-width: 240px; font-size: 13px; line-height: 1.4; }
 .td-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -1972,7 +1972,7 @@ function renderTable() {
         <td style="color:var(--text3);text-align:center;font-size:12px;width:32px">${start+i+1}</td>
         <td class="td-name">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span>${p.name}</span>
+            <span style="user-select:text">${p.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
             ${p.quarter&&p.quarter!=='all'?`<span style="font-size:10px;background:var(--accent-light);color:var(--accent);padding:1px 6px;border-radius:4px;font-weight:600;flex-shrink:0">Q${p.quarter}</span>`:''}
           </div>
         </td>
@@ -2090,7 +2090,7 @@ function openAdd(){
 }
 
 function openEdit(id){
-  const p=projects.find(x=>x.id===id); if(!p) return;
+  const p=projects.find(x=>x.id==id); if(!p) return;
   editingId=id; tempKPIs=[...(p.kpi||[])]; tempImages=[...(p.images||[])];
   document.getElementById('modalTitle').textContent='แก้ไขโครงการ';
   document.getElementById('editId').value=id;
@@ -2160,7 +2160,7 @@ function renderKPIList(){
 
 // ===== DETAIL =====
 function openDetail(id){
-  const p=projects.find(x=>x.id===id); if(!p) return;
+  const p=projects.find(x=>x.id==id); if(!p) return;
   document.getElementById('detailTitle').textContent=p.name;
   document.getElementById('detailEditBtn').onclick=()=>openEdit(id);
   const remaining=(p.budget||0)-(p.spent||0)-(p.po||0);
@@ -2225,13 +2225,13 @@ function openDetail(id){
 function closeDetail(){ document.getElementById('detailOverlay').classList.remove('open'); }
 function escapeHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
 function openDetailImgLightbox(projectId, idx){
-  const p = projects.find(x=>x.id===projectId); if(!p||!p.images) return;
+  const p = projects.find(x=>x.id==projectId); if(!p||!p.images) return;
   openLightboxGallery(p.images.map(i=>i.dataUrl), idx);
 }
 
 // ===== DELETE =====
 function confirmDelete(id){
-  const p=projects.find(x=>x.id===id); if(!p) return;
+  const p=projects.find(x=>x.id==id); if(!p) return;
   deleteId=id;
   document.getElementById('deleteName').textContent=p.name;
   document.getElementById('confirmDeleteBtn').onclick=()=>doDelete();
