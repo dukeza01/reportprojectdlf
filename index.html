@@ -1438,6 +1438,15 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
   </div>
 </div>
 
+<div id="initLoadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(244,246,249,.92);backdrop-filter:blur(8px);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+  <div style="width:44px;height:44px;border:4px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>
+  <div style="font-size:14px;font-weight:600;color:var(--text2)">กำลังโหลดข้อมูลจาก Google Sheet...</div>
+  <div style="font-size:12px;color:var(--text3)">รวมรูปภาพประกอบโครงการทั้งหมด</div>
+</div>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2091,7 +2100,15 @@ function openAdd(){
 
 function openEdit(id){
   const p=projects.find(x=>x.id==id); if(!p) return;
-  editingId=id; tempKPIs=[...(p.kpi||[])]; tempImages=[...(p.images||[])];
+  editingId=id; tempKPIs=[...(p.kpi||[])];
+  // โหลดรูปเดิม — แต่ละรูปมี url และ driveId อยู่แล้ว ไม่ต้อง upload ซ้ำ
+  tempImages=(p.images||[]).map(img=>({
+    name:    img.name    || '',
+    url:     img.url     || img.dataUrl || '', // รองรับข้อมูลเก่าที่มี dataUrl
+    driveId: img.driveId || '',
+    _uploading: false,
+    _dataUrl: img.dataUrl || img.url || ''    // ใช้แสดง preview
+  }));
   document.getElementById('modalTitle').textContent='แก้ไขโครงการ';
   document.getElementById('editId').value=id;
   document.getElementById('fName').value=p.name;
@@ -2117,6 +2134,21 @@ function closeModal(){ document.getElementById('modalOverlay').classList.remove(
 function saveProject(){
   const name=document.getElementById('fName').value.trim();
   if(!name){alert('กรุณากรอกชื่อโครงการ');return;}
+
+  // รอรูปที่กำลัง upload อยู่ให้เสร็จก่อน
+  const stillUploading = tempImages.filter(i=>i._uploading);
+  if(stillUploading.length){
+    showToast(`⏳ รอรูปภาพ ${stillUploading.length} รูปอัปโหลดให้เสร็จก่อนครับ`, 3000);
+    return;
+  }
+
+  // ส่งเฉพาะ field ที่จำเป็น ไม่ส่ง _dataUrl/_uploading/_driveError ขึ้น Sheet
+  const cleanImages = tempImages.map(img=>({
+    name:    img.name    || '',
+    url:     img.url     || '',
+    driveId: img.driveId || ''
+  }));
+
   const data={
     name, strategy:document.getElementById('fStrategy').value,
     budget:parseFloat(document.getElementById('fBudget').value)||0,
@@ -2130,18 +2162,25 @@ function saveProject(){
     solutions:document.getElementById('fSolutions').value.trim(),
     owner:document.getElementById('fOwner').value.trim(),
     committees:getComCheckboxes(),
-    images:[...tempImages]
+    images: cleanImages
   };
+  const imgCount = cleanImages.length;
+  const imgLabel = imgCount>0 ? ` · รูปภาพ ${imgCount} รูป (Drive)` : '';
+
   if(editingId){
     data.id=editingId;
-    const i=projects.findIndex(p=>p.id===editingId);
+    const i=projects.findIndex(p=>p.id==editingId);
     if(i>=0) projects[i]={...projects[i],...data};
-    if(GAS_ENABLED) gasPost('update',{data}).catch(()=>{});
+    if(GAS_ENABLED) gasPost('update',{data})
+      .then(()=>showToast(`✅ อัปเดตสำเร็จ${imgLabel}`,2800))
+      .catch(()=>showToast('⚠️ บันทึกในเครื่องแล้ว แต่ Sync Sheet ไม่สำเร็จ',3000));
   } else {
-    const maxId=projects.reduce((m,p)=>Math.max(m,p.id),0);
+    const maxId=projects.reduce((m,p)=>Math.max(m,Number(p.id)||0),0);
     data.id=maxId+1;
     projects.push(data);
-    if(GAS_ENABLED) gasPost('save',{data}).catch(()=>{});
+    if(GAS_ENABLED) gasPost('save',{data})
+      .then(()=>showToast(`✅ บันทึกสำเร็จ${imgLabel}`,2800))
+      .catch(()=>showToast('⚠️ บันทึกในเครื่องแล้ว แต่ Sync Sheet ไม่สำเร็จ',3000));
   }
   closeModal(); saveToLocal(); renderTable(); updateDashboard();
 }
@@ -2212,11 +2251,12 @@ function openDetail(id){
     <div class="detail-section">
       <div class="detail-section-title">📸 รูปภาพประกอบการดำเนินงาน (${p.images.length} รูป)</div>
       <div class="detail-img-gallery">
-        ${p.images.map((img,i)=>`
-          <div class="detail-img-item" onclick="openDetailImgLightbox(${p.id},${i})" title="${escapeHtml(img.name||'')}">
-            <img src="${img.dataUrl}" alt="${escapeHtml(img.name||'รูปภาพ')}">
-          </div>
-        `).join('')}
+        ${p.images.map((img,i)=>{
+          const src = img.url || img.dataUrl || '';
+          return `<div class="detail-img-item" onclick="openDetailImgLightbox(${p.id},${i})" title="${escapeHtml(img.name||'')}">
+            <img src="${src}" alt="${escapeHtml(img.name||'รูปภาพ')}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><rect width=%2280%22 height=%2280%22 fill=%22%23eee%22/><text x=%2240%22 y=%2244%22 text-anchor=%22middle%22 font-size=%2212%22 fill=%22%23999%22>❌</text></svg>'">
+          </div>`;
+        }).join('')}
       </div>
     </div>`:''}
   `;
@@ -2226,7 +2266,7 @@ function closeDetail(){ document.getElementById('detailOverlay').classList.remov
 function escapeHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
 function openDetailImgLightbox(projectId, idx){
   const p = projects.find(x=>x.id==projectId); if(!p||!p.images) return;
-  openLightboxGallery(p.images.map(i=>i.dataUrl), idx);
+  openLightboxGallery(p.images.map(i=>i.url||i.dataUrl||''), idx);
 }
 
 // ===== DELETE =====
@@ -2238,20 +2278,30 @@ function confirmDelete(id){
   document.getElementById('deleteOverlay').classList.add('open');
 }
 function doDelete(){
-  if(GAS_ENABLED) gasPost('delete',{id:deleteId}).catch(()=>{});
-  projects=projects.filter(p=>p.id!==deleteId);
+  const p=projects.find(x=>x.id==deleteId);
+  // ลบรูปภาพออกจาก Drive ด้วย (async)
+  if(p&&p.images&&GAS_ENABLED){
+    p.images.forEach(img=>{ if(img.driveId) gasPost('deleteImage',{driveId:img.driveId}).catch(()=>{}); });
+  }
+  projects=projects.filter(p=>p.id!=deleteId);
   document.getElementById('deleteOverlay').classList.remove('open');
   saveToLocal(); renderTable(); updateDashboard();
+  if(GAS_ENABLED) gasPost('delete',{id:deleteId})
+    .then(()=>showToast('🗑️ ลบโครงการและไฟล์ใน Drive สำเร็จ',2500))
+    .catch(()=>showToast('⚠️ ลบในเครื่องแล้ว แต่ Sync Sheet ไม่สำเร็จ',3000));
+}
+    .catch(()=>showToast('⚠️ ลบในเครื่องแล้ว แต่ Sync Sheet ไม่สำเร็จ',3000));
 }
 
-// ===== IMAGE UPLOAD =====
-let tempImages = []; // [{name, dataUrl, size}]
+// ===== IMAGE UPLOAD (Google Drive) =====
+// tempImages เก็บ {name, url, driveId, _dataUrl(ชั่วคราวสำหรับ preview), _uploading}
+let tempImages = [];
 let lightboxImages = [];
 let lightboxIdx = 0;
 
 function handleImgSelect(e){
   addImagesToTemp(Array.from(e.target.files));
-  e.target.value = ''; // reset input so same file can be re-selected
+  e.target.value = '';
 }
 function handleImgDragOver(e){ e.preventDefault(); document.getElementById('imgUploadZone').classList.add('drag-over'); }
 function handleImgDragLeave(e){ document.getElementById('imgUploadZone').classList.remove('drag-over'); }
@@ -2265,47 +2315,105 @@ function addImagesToTemp(files){
   const remaining = 10 - tempImages.length;
   if(remaining <= 0){ showToast('อัปโหลดรูปได้สูงสุด 10 รูปเท่านั้น'); return; }
   const toAdd = files.slice(0, remaining);
-  if(files.length > remaining) showToast(`เพิ่มได้อีก ${remaining} รูป (เลือกมา ${files.length} รูป)`);
+  if(files.length > remaining) showToast(`เพิ่มได้อีก ${remaining} รูป`);
+
   toAdd.forEach(file => {
-    if(file.size > 5*1024*1024){ showToast(`${file.name}: ไฟล์ใหญ่เกิน 5MB`); return; }
+    if(file.size > 10*1024*1024){ showToast(`${file.name}: ไฟล์ใหญ่เกิน 10MB`); return; }
+
+    // สร้าง placeholder ก่อนเพื่อ preview ทันที
+    const idx = tempImages.length;
+    const placeholder = { name: file.name, url: '', driveId: '', _uploading: true, _dataUrl: '' };
+    tempImages.push(placeholder);
+    renderImgPreview();
+
+    // อ่านเป็น base64
     const reader = new FileReader();
     reader.onload = ev => {
-      tempImages.push({ name: file.name, dataUrl: ev.target.result, size: file.size });
+      placeholder._dataUrl = ev.target.result;
       renderImgPreview();
+
+      // ถ้าไม่มี GAS → เก็บ dataUrl ไว้ชั่วคราว (ใช้งานได้เฉพาะเครื่องนี้)
+      if(!GAS_ENABLED || !_gasUrl){
+        placeholder.url = ev.target.result;  // fallback
+        placeholder._uploading = false;
+        renderImgPreview();
+        showToast('⚠️ ยังไม่ได้ตั้งค่า GAS — รูปจะใช้ได้เฉพาะเครื่องนี้');
+        return;
+      }
+
+      // ส่ง base64 ไปอัปโหลดยัง Google Drive ผ่าน GAS
+      const base64 = ev.target.result.split(',')[1];
+      const mimeType = file.type || 'image/jpeg';
+
+      gasPost('uploadImage', { base64, mimeType, fileName: file.name })
+        .then(res => {
+          if(!res.success) throw new Error(res.message||'Upload failed');
+          placeholder.url     = res.url;
+          placeholder.driveId = res.driveId;
+          placeholder._uploading = false;
+          renderImgPreview();
+          showToast(`📸 อัปโหลด "${file.name}" ขึ้น Drive สำเร็จ`, 2500);
+        })
+        .catch(err => {
+          // fallback: เก็บ dataUrl ไว้ก่อนถ้า Drive ไม่ได้
+          placeholder.url = ev.target.result;
+          placeholder._uploading = false;
+          placeholder._driveError = true;
+          renderImgPreview();
+          showToast(`⚠️ Drive upload ล้มเหลว — รูปใช้ได้เฉพาะเครื่องนี้`, 3000);
+        });
     };
     reader.readAsDataURL(file);
   });
 }
 
 function removeImgTemp(i){
+  const img = tempImages[i];
+  // ลบออกจาก Drive ด้วย (ถ้ามี driveId)
+  if(img && img.driveId && GAS_ENABLED){
+    gasPost('deleteImage', { driveId: img.driveId }).catch(()=>{});
+  }
   tempImages.splice(i, 1);
   renderImgPreview();
 }
 
 function renderImgPreview(){
-  const grid = document.getElementById('imgPreviewGrid');
-  const info = document.getElementById('imgCountInfo');
+  const grid     = document.getElementById('imgPreviewGrid');
+  const info     = document.getElementById('imgCountInfo');
   const countTxt = document.getElementById('imgCountText');
   if(!grid) return;
-  if(!tempImages.length){
-    grid.innerHTML = '';
-    info.style.display = 'none';
-    return;
-  }
-  grid.innerHTML = tempImages.map((img, i) => `
-    <div class="img-preview-item">
-      <img src="${img.dataUrl}" alt="${escapeHtml(img.name)}" onclick="openLightboxTemp(${i})">
-      <button class="img-remove" onclick="removeImgTemp(${i})" title="ลบรูป">✕</button>
+  if(!tempImages.length){ grid.innerHTML=''; info.style.display='none'; return; }
+
+  grid.innerHTML = tempImages.map((img, i) => {
+    const src = img._dataUrl || img.url || '';
+    const uploading = img._uploading;
+    const hasError  = img._driveError;
+    return `
+    <div class="img-preview-item" style="position:relative">
+      ${src ? `<img src="${src}" alt="${escapeHtml(img.name)}" onclick="${uploading?'':'openLightboxTemp('+i+')'}">` : '<div style="width:100%;height:100%;background:var(--surface2)"></div>'}
+      ${uploading ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;border-radius:var(--radius)">
+        <div style="width:22px;height:22px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></div>
+      </div>` : ''}
+      ${hasError ? `<div style="position:absolute;top:3px;left:3px;background:var(--amber);color:#fff;font-size:9px;padding:1px 4px;border-radius:3px">⚠️</div>` : ''}
+      ${!uploading ? `<button class="img-remove" onclick="removeImgTemp(${i})" title="ลบรูป">✕</button>` : ''}
       <div class="img-caption">${escapeHtml(img.name)}</div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+
   info.style.display = 'inline-flex';
-  countTxt.textContent = `${tempImages.length} รูป`;
+  const ready = tempImages.filter(i=>!i._uploading).length;
+  const total = tempImages.length;
+  countTxt.textContent = total===ready ? `${total} รูป (พร้อมใช้งาน)` : `${ready}/${total} รูป (กำลังอัปโหลด...)`;
 }
 
 function openLightboxTemp(idx){
-  lightboxImages = tempImages.map(i => i.dataUrl);
-  lightboxIdx = idx;
+  // ถ้ายังมีรูปที่กำลัง upload อยู่ ข้ามไป
+  const ready = tempImages.filter(i=>!i._uploading);
+  if(!ready.length) return;
+  // สร้าง index mapping
+  const readyIdx = tempImages.filter((img,i)=>!img._uploading);
+  lightboxImages = readyIdx.map(i=>i.url||i._dataUrl);
+  lightboxIdx = Math.min(idx, lightboxImages.length-1);
   showLightbox();
 }
 
@@ -2639,7 +2747,7 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJbOC05KrEBcrwCA2KSgMS2H6cYEFk9o1XAnFK9AlCSEEDirjl7H2tnhmbuahgIAzo/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwPodmlDvxyq8vhNT4I2XphhClZyV1s3askasVTg4AttlTBc7FuOFaafLL2FGj0OFsIdg/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
@@ -2877,10 +2985,35 @@ document.getElementById('detailOverlay').addEventListener('click',e=>{ if(e.targ
 document.getElementById('deleteOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
 
 // ===== INIT =====
-loadFromLocal();
-updateDashboard();
-_initGasUI();
-setTimeout(()=>loadFromSheet(), 300);
+(function initApp(){
+  _initGasUI();
+  const overlay = document.getElementById('initLoadingOverlay');
+  function showApp(){
+    if(overlay) overlay.style.display='none';
+    updateDashboard();
+  }
+  // ถ้ามี GAS URL → โหลดจาก Sheet ก่อนเสมอ (รูปภาพรวมอยู่ใน images_json)
+  if(GAS_ENABLED && _gasUrl && !_gasUrl.includes('YOUR_GAS')){
+    if(overlay) overlay.style.display='flex';
+    fetch(`${_gasUrl}?action=getAll`)
+      .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(res=>{
+        if(!res.success) throw new Error(res.message);
+        projects=res.data;
+        saveToLocal();
+        showApp();
+        const st=document.getElementById('gsStatus');
+        if(st) st.innerHTML=`<div class="status-msg status-ok">✅ โหลดสำเร็จ ${projects.length} โครงการ (รวมรูปภาพจาก Google Sheet)</div>`;
+      })
+      .catch(()=>{
+        loadFromLocal(); showApp();
+        const st=document.getElementById('gsStatus');
+        if(st) st.innerHTML='<div class="status-msg status-err">⚠️ โหลดจาก Sheet ไม่ได้ — ใช้ข้อมูลในเครื่องแทน (รูปภาพอาจไม่ครบ)</div>';
+      });
+  } else {
+    loadFromLocal(); showApp();
+  }
+})();
 </script>
 </body>
 </html>
