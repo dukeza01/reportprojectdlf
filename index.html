@@ -2817,55 +2817,74 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyrRmB13ibuPqIXzqdV3Jw_XUOk5Sxlq5tM3a7mf3yqFmnVxAE5hY1C7eM84p_MmHBf/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzkv1Y74DPhx5E9p9qDFqli1JDDL7VxEnfU65Kh7dT2JsvVeHiBDe5i16BVFQTdTDNAfA/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
 // ── gasPost: ส่งผ่าน GET parameter เพื่อหลีกเลี่ยงปัญหา CORS/redirect ──
 // GAS Web App จาก browser ภายนอก: POST body มักหายระหว่าง redirect
 // วิธีที่เสถียรที่สุดคือส่งทุกอย่างผ่าน GET query string
+// ── gasJsonp: เรียก GAS ด้วย JSONP — ข้าม CORS ได้ 100% ──────
+// GAS Web App ไม่รองรับ CORS header จาก browser ภายนอก
+// JSONP ใช้ <script> tag โหลด JS response แทน fetch → ไม่มี CORS block
+function gasJsonp(params){
+  return new Promise((resolve, reject) => {
+    const cbName = '_gasCb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      reject(new Error('GAS timeout'));
+    }, 30000);
+
+    window[cbName] = function(data){
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      resolve(data);
+    };
+
+    const p = new URLSearchParams({ ...params, callback: cbName });
+    const script = document.createElement('script');
+    script.src = _gasUrl + '?' + p.toString();
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      reject(new Error('Script load error'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+// ── gasPost: ใช้ JSONP สำหรับ action ทั่วไป ──────────────────
 function gasPost(action, payload){
-  const params = new URLSearchParams({ action, ...flattenForGas(payload) });
-  // ลอง POST ก่อน ถ้าไม่ได้ให้ fallback GET
-  const url = _gasUrl + '?' + params.toString();
-  return fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action, ...payload })
-  }).then(r => r.json()).catch(() => fetch(url).then(r => r.json()));
-}
-
-function flattenForGas(obj){
-  const result = {};
-  for(const k in obj){
-    const v = obj[k];
-    result[k] = (typeof v === 'object') ? JSON.stringify(v) : v;
+  const flat = {};
+  for(const k in payload){
+    const v = payload[k];
+    flat[k] = (typeof v === 'object') ? JSON.stringify(v) : String(v);
   }
-  return result;
+  return gasJsonp({ action, ...flat });
 }
 
-// ── gasUpload: อัปโหลดรูปภาพ ──
-// base64 ยาวเกิน URL limit → แบ่งส่งเป็น chunk ผ่าน GAS
-// chunk แต่ละอัน ≤ 50,000 chars (safe สำหรับ URL + GAS)
+// ── gasUpload: อัปโหลดรูปภาพแบบ chunk ผ่าน JSONP ─────────────
+// แบ่ง base64 เป็น chunk ≤ 1500 chars ต่อ request
+// (URL limit ของ GAS ประมาณ 2000 chars รวม base URL)
 async function gasUpload(base64, mimeType, fileName){
-  const CHUNK = 50000;
+  const CHUNK = 1500;
   const totalChunks = Math.ceil(base64.length / CHUNK);
   const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,7);
 
   for(let i = 0; i < totalChunks; i++){
     const chunk = base64.slice(i * CHUNK, (i + 1) * CHUNK);
-    const params = new URLSearchParams({
+    const res = await gasJsonp({
       action: 'uploadChunk',
       uploadId,
       chunk,
-      chunkIndex: i,
-      totalChunks,
+      chunkIndex: String(i),
+      totalChunks: String(totalChunks),
       mimeType,
       fileName
     });
-    const res = await fetch(_gasUrl + '?' + params.toString()).then(r => r.json());
-    if(!res || !res.success) throw new Error((res && res.message) || 'chunk error');
-    // chunk สุดท้าย GAS จะ assemble และ return driveId + url
+    if(!res || !res.success) throw new Error((res && res.message) || 'chunk ' + i + ' failed');
     if(i === totalChunks - 1) return res;
   }
 }
