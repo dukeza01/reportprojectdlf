@@ -2347,50 +2347,67 @@ function addImagesToTemp(files){
   if(files.length > remaining) showToast(`เพิ่มได้อีก ${remaining} รูป`);
 
   toAdd.forEach(file => {
-    if(file.size > 10*1024*1024){ showToast(`${file.name}: ไฟล์ใหญ่เกิน 10MB`); return; }
+    if(file.size > 20*1024*1024){ showToast(`${file.name}: ไฟล์ใหญ่เกิน 20MB`); return; }
 
-    // สร้าง placeholder ก่อนเพื่อ preview ทันที
-    const idx = tempImages.length;
     const placeholder = { name: file.name, url: '', driveId: '', _uploading: true, _dataUrl: '' };
     tempImages.push(placeholder);
     renderImgPreview();
 
-    // อ่านเป็น base64
-    const reader = new FileReader();
-    reader.onload = ev => {
-      placeholder._dataUrl = ev.target.result;
+    // Resize รูปก่อน upload เพื่อลดขนาด payload
+    resizeImage(file, 1200).then(base64 => {
+      placeholder._dataUrl = base64;
       renderImgPreview();
 
-      // ถ้าไม่มี GAS → เก็บ dataUrl ไว้ชั่วคราว (ใช้งานได้เฉพาะเครื่องนี้)
       if(!GAS_ENABLED || !_gasUrl){
-        placeholder.url = ev.target.result;  // fallback
+        placeholder.url = base64;
         placeholder._uploading = false;
         renderImgPreview();
         showToast('⚠️ ยังไม่ได้ตั้งค่า GAS — รูปจะใช้ได้เฉพาะเครื่องนี้');
         return;
       }
 
-      // ส่ง base64 ไปอัปโหลดยัง Google Drive ผ่าน GAS
-      const base64 = ev.target.result.split(',')[1];
+      const b64data  = base64.split(',')[1];
       const mimeType = file.type || 'image/jpeg';
 
-      gasPost('uploadImage', { base64, mimeType, fileName: file.name })
+      gasPost('uploadImage', { base64: b64data, mimeType, fileName: file.name })
         .then(res => {
-          if(!res.success) throw new Error(res.message||'Upload failed');
-          placeholder.url     = res.url;
-          placeholder.driveId = res.driveId;
+          if(!res || !res.success) throw new Error((res&&res.message)||'GAS ไม่ตอบกลับ');
+          placeholder.url      = res.url;
+          placeholder.driveId  = res.driveId;
           placeholder._uploading = false;
           renderImgPreview();
           showToast(`📸 อัปโหลด "${file.name}" ขึ้น Drive สำเร็จ`, 2500);
         })
         .catch(err => {
-          // fallback: เก็บ dataUrl ไว้ก่อนถ้า Drive ไม่ได้
-          placeholder.url = ev.target.result;
+          console.error('uploadImage error:', err);
+          placeholder.url = base64;   // fallback dataUrl
           placeholder._uploading = false;
           placeholder._driveError = true;
           renderImgPreview();
-          showToast(`⚠️ Drive upload ล้มเหลว — รูปใช้ได้เฉพาะเครื่องนี้`, 3000);
+          showToast(`⚠️ อัปโหลดไม่สำเร็จ: ${err.message}`, 4000);
         });
+    });
+  });
+}
+
+// ── Resize รูปก่อน upload ────────────────────────────────────
+function resizeImage(file, maxPx){
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > maxPx || h > maxPx){
+          if(w > h){ h = Math.round(h * maxPx / w); w = maxPx; }
+          else      { w = Math.round(w * maxPx / h); h = maxPx; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   });
@@ -2776,12 +2793,17 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwtUnRVhveSAYobro5VJxniPrWqxIDKmGXAj6dHbGwaQlXiwQ5MOrt5HXqi-yCkmeaiLA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyjzlOBc1hXGcqgJ7_PyRWb9BRaFIV7GGPEjkbdaVZnnRkriXZDm4kShaHTAcaOnURveg/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
 function gasPost(action, payload){
-  return fetch(_gasUrl,{method:'POST',body:JSON.stringify({action,...payload})}).then(r=>r.json());
+  // GAS Web App ต้องการ Content-Type: text/plain เพื่อหลีกเลี่ยง CORS preflight
+  return fetch(_gasUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, ...payload })
+  }).then(r => r.json());
 }
 
 function applyGasUrl(){
