@@ -546,6 +546,52 @@ tbody tr.data-row:active td { background: #dce8ff; }
   text-transform: uppercase; letter-spacing: .06em;
 }
 
+/* Committee multi-select dropdown */
+.com-dropdown-wrap { position: relative; }
+.com-trigger {
+  width: 100%; padding: 8px 32px 8px 11px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: 13px; font-family: 'Sarabun', sans-serif;
+  background: var(--surface); color: var(--text);
+  cursor: pointer; text-align: left;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  transition: border-color .15s;
+  min-height: 36px;
+}
+.com-trigger:hover, .com-trigger.open { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,114,240,.1); }
+.com-trigger-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.com-trigger-arrow { flex-shrink: 0; font-size: 10px; color: var(--text3); transition: transform .2s; }
+.com-trigger.open .com-trigger-arrow { transform: rotate(180deg); }
+.com-tags { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+.com-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--accent-light); color: var(--accent);
+  padding: 1px 7px; border-radius: 99px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.com-placeholder { color: var(--text3); font-size: 13px; }
+
+.com-panel {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  z-index: 300; overflow: hidden;
+}
+.com-panel.open { display: block; }
+.com-panel-inner { padding: 6px; }
+.com-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 6px;
+  cursor: pointer; font-size: 13px;
+  transition: background .12s;
+  user-select: none;
+}
+.com-option:hover { background: var(--surface2); }
+.com-option input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+.com-option-name { font-weight: 600; color: var(--text); flex: 1; }
+.com-option-desc { font-size: 11px; color: var(--text3); }
+.com-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
 /* KPI */
 .kpi-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; min-height: 24px; }
 .kpi-tag {
@@ -604,6 +650,116 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
 .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); }
 .empty-state svg { width: 42px; height: 42px; margin: 0 auto .75rem; display: block; opacity: .4; }
 .empty-state p { font-size: 13px; }
+
+/* ── Image Upload ── */
+.img-upload-zone {
+  border: 2px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  background: var(--surface2);
+  position: relative;
+}
+.img-upload-zone:hover, .img-upload-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.img-upload-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.img-upload-icon { font-size: 28px; margin-bottom: 6px; }
+.img-upload-label { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.img-upload-label strong { color: var(--accent); }
+
+.img-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.img-preview-item {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+}
+.img-preview-item img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.img-preview-item .img-remove {
+  position: absolute; top: 4px; right: 4px;
+  background: rgba(0,0,0,.65); color: #fff;
+  border: none; border-radius: 50%;
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 12px; line-height: 1;
+  transition: background .15s;
+}
+.img-preview-item .img-remove:hover { background: var(--red); }
+.img-preview-item .img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,.55); color: #fff;
+  font-size: 9px; padding: 2px 4px; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.img-count-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--accent-light); color: var(--accent);
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 99px; margin-top: 6px;
+}
+
+/* Detail image gallery */
+.detail-img-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.detail-img-item {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.detail-img-item:hover { transform: scale(1.03); box-shadow: var(--shadow-lg); }
+.detail-img-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Lightbox */
+.lightbox-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.88); z-index: 999;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px;
+}
+.lightbox-overlay.open { display: flex; }
+.lightbox-img { max-width: 90vw; max-height: 80vh; object-fit: contain; border-radius: var(--radius); box-shadow: 0 8px 40px rgba(0,0,0,.6); }
+.lightbox-close {
+  position: absolute; top: 16px; right: 20px;
+  background: rgba(255,255,255,.15); border: none; color: #fff;
+  width: 36px; height: 36px; border-radius: 50%;
+  font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.lightbox-close:hover { background: rgba(255,255,255,.3); }
+.lightbox-nav {
+  display: flex; gap: 12px;
+}
+.lightbox-nav button {
+  background: rgba(255,255,255,.15); border: none; color: #fff;
+  padding: 6px 16px; border-radius: var(--radius);
+  font-family: 'Sarabun', sans-serif; font-size: 13px; cursor: pointer;
+  transition: background .15s;
+}
+.lightbox-nav button:hover { background: rgba(255,255,255,.3); }
+.lightbox-counter { color: rgba(255,255,255,.6); font-size: 12px; }
 
 /* Print */
 @media print {
@@ -977,13 +1133,58 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
           <div class="gs-box-title">รูปแบบข้อมูลที่รองรับ</div>
           <div class="gs-box-desc">
             Sheet ควรมีหัวคอลัมน์แถวแรกดังนี้:<br><br>
-            <code>id | name | strategy | budget | spent | po | status | result | kpi | problems | solutions | quarter</code><br><br>
+            <code>id | name | strategy | budget | spent | po | status | result | kpi | problems | solutions | quarter | owner | committees | image_count | images_json</code><br><br>
             • <code>strategy</code> = 1, 2, 3, 4 หรือ 5 (งบบริหารสำนักงาน)<br>
             • <code>budget, spent, po</code> = จำนวนเงิน (ตัวเลข ไม่ใส่ comma)<br>
             • <code>status</code> = done / progress / pending<br>
             • <code>kpi</code> = ตัวชี้วัด คั่นด้วย | (pipe)<br>
-            • <code>quarter</code> = 1, 2, 3, 4 หรือ all
+            • <code>quarter</code> = 1, 2, 3, 4 หรือ all<br>
+            • <code>owner</code> = ผู้รับผิดชอบ / หน่วยงาน<br>
+            • <code>committees</code> = JSON array เช่น ["นโยบายและแผนงาน","วิชาการ"]<br>
+            • <code>images_json</code> = JSON array ของรูปภาพ (base64)
           </div>
+        </div>
+        <div class="gs-box" style="background:#fffbeb;border-color:#fde68a">
+          <div class="gs-box-title" style="color:#92400e">📸 วิธีการส่งรูปภาพขึ้น Google Sheet</div>
+          <div class="gs-box-desc" style="color:#78350f">
+            รูปภาพจะถูกแปลงเป็น Base64 และส่งไปพร้อมข้อมูลโครงการผ่าน GAS<br>
+            Google Apps Script ของคุณต้องรองรับ field <code>images</code> ใน payload<br><br>
+            <strong>ตัวอย่าง GAS Code ที่รองรับรูปภาพ:</strong><br><br>
+            <code style="display:block;white-space:pre-wrap;line-height:1.8;font-size:10.5px">function doPost(e) {
+  const payload = JSON.parse(e.postData.contents);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet()
+                  .getSheetByName('Projects') || 
+                SpreadsheetApp.getActiveSpreadsheet()
+                  .getSheets()[0];
+  
+  if (payload.action === 'save' || payload.action === 'update') {
+    const d = payload.data;
+    const images = d.images || [];
+    // บันทึกจำนวนรูปและ JSON ลง Sheet
+    const imgCount = images.length;
+    const imgJson = JSON.stringify(images.map(i=>({name:i.name,dataUrl:i.dataUrl})));
+    
+    // หาแถวที่มี id ตรงกัน หรือเพิ่มแถวใหม่
+    const data = sheet.getDataRange().getValues();
+    let rowIdx = -1;
+    for(let i=1;i<data.length;i++){
+      if(data[i][0]==d.id){ rowIdx=i+1; break; }
+    }
+    const row = [d.id,d.name,d.strategy,d.budget,d.spent,d.po,
+                 d.status,d.result,(d.kpi||[]).join('|'),
+                 d.problems,d.solutions,d.quarter,imgCount,imgJson];
+    if(rowIdx>0) sheet.getRange(rowIdx,1,1,row.length).setValues([row]);
+    else sheet.appendRow(row);
+    return ContentService.createTextOutput(
+      JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+  }
+  // ... (action อื่นๆ เช่น getAll, delete, bulkSave)
+}</code>
+          </div>
+          <div class="gs-row" style="margin-top:.5rem">
+            <button class="btn btn-sm" style="background:#fef3c7;border-color:#fde68a;color:#92400e" onclick="copyGASTemplate()">📋 คัดลอก GAS Template</button>
+          </div>
+          <div id="gasTemplateCopyStatus" style="margin-top:6px;font-size:11px;color:var(--green)"></div>
         </div>
         <div class="gs-box">
           <div class="gs-box-title">
@@ -1031,6 +1232,35 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
             <option value="5">งบบริหารสำนักงาน</option>
           </select>
         </div>
+        <div class="form-field full">
+          <label class="form-label">อนุกรรมการที่เกี่ยวข้อง</label>
+          <div class="com-dropdown-wrap" id="comDropdownWrap">
+            <button type="button" class="com-trigger" id="comTrigger" onclick="toggleComPanel()">
+              <span class="com-trigger-text" id="comTriggerText"><span class="com-placeholder">— เลือกอนุกรรมการที่เกี่ยวข้อง —</span></span>
+              <span class="com-trigger-arrow">▼</span>
+            </button>
+            <div class="com-panel" id="comPanel">
+              <div class="com-panel-inner">
+                <label class="com-option">
+                  <input type="checkbox" id="chkPolicy" value="นโยบายและแผนงาน" onchange="updateComTrigger()">
+                  <span class="com-option-name">อนุกรรมการด้านนโยบายและแผนงาน</span>
+                </label>
+                <label class="com-option">
+                  <input type="checkbox" id="chkAcademic" value="วิชาการ" onchange="updateComTrigger()">
+                  <span class="com-option-name">อนุกรรมการด้านวิชาการ</span>
+                </label>
+                <label class="com-option">
+                  <input type="checkbox" id="chkTech" value="เทคนิคและเทคโนโลยีดิจิทัล" onchange="updateComTrigger()">
+                  <span class="com-option-name">อนุกรรมการด้านเทคนิคและเทคโนโลยีดิจิทัล</span>
+                </label>
+                <label class="com-option">
+                  <input type="checkbox" id="chkHR" value="บริหารงานบุคคล" onchange="updateComTrigger()">
+                  <span class="com-option-name">อนุกรรมการด้านบริหารงานบุคคล</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="form-field">
           <label class="form-label">สถานะ</label>
           <select id="fStatus" class="form-select">
@@ -1061,6 +1291,10 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
           <label class="form-label">PO (บาท)</label>
           <input type="number" id="fPO" class="form-input" placeholder="0" min="0">
         </div>
+        <div class="form-field full">
+          <label class="form-label">👤 ผู้รับผิดชอบโครงการ / หน่วยงาน</label>
+          <input type="text" id="fOwner" class="form-input" placeholder="เช่น กลุ่มสารสนเทศ, ฝ่ายสารสนเทศและสื่อสารองค์กร...">
+        </div>
         <div class="form-field full"><div class="form-section">ผลการดำเนินงาน</div></div>
         <div class="form-field full">
           <label class="form-label">ผลการดำเนินงาน</label>
@@ -1083,6 +1317,23 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
         <div class="form-field full">
           <label class="form-label">แนวทางแก้ไข / ข้อเสนอแนะ</label>
           <textarea id="fSolutions" class="form-textarea" rows="2" placeholder="ระบุแนวทางแก้ไข..."></textarea>
+        </div>
+        <div class="form-field full"><div class="form-section">📸 รูปภาพประกอบการดำเนินงาน</div></div>
+        <div class="form-field full">
+          <label class="form-label">อัปโหลดรูปภาพ (สูงสุด 10 รูป, แต่ละรูปไม่เกิน 5MB)</label>
+          <div class="img-upload-zone" id="imgUploadZone"
+               ondragover="handleImgDragOver(event)" ondragleave="handleImgDragLeave(event)" ondrop="handleImgDrop(event)">
+            <input type="file" id="imgFileInput" accept="image/*" multiple onchange="handleImgSelect(event)">
+            <div class="img-upload-icon">🖼️</div>
+            <div class="img-upload-label">
+              <strong>คลิกเพื่อเลือกรูปภาพ</strong> หรือลากรูปมาวางที่นี่<br>
+              รองรับ JPG, PNG, GIF, WebP
+            </div>
+          </div>
+          <div class="img-preview-grid" id="imgPreviewGrid"></div>
+          <div id="imgCountInfo" style="display:none" class="img-count-badge">
+            📷 <span id="imgCountText">0 รูป</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1126,6 +1377,17 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
       <button class="btn" onclick="document.getElementById('deleteOverlay').classList.remove('open')">ยกเลิก</button>
       <button class="btn btn-danger" id="confirmDeleteBtn">🗑 ลบโครงการ</button>
     </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="if(event.target===this)closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="">
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+  <div class="lightbox-nav">
+    <button onclick="lightboxNav(-1)">◀ ก่อนหน้า</button>
+    <button onclick="lightboxNav(1)">ถัดไป ▶</button>
   </div>
 </div>
 
@@ -1760,9 +2022,9 @@ function getFiltered(){
 
 // ===== MODAL =====
 function openAdd(){
-  editingId=null; tempKPIs=[];
+  editingId=null; tempKPIs=[]; tempImages=[];
   document.getElementById('modalTitle').textContent='เพิ่มโครงการใหม่';
-  ['editId','fName'].forEach(id=>document.getElementById(id).value='');
+  ['editId','fName','fOwner'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fStrategy').value='1';
   document.getElementById('fBudget').value='0';
   document.getElementById('fSpent').value='0';
@@ -1772,15 +2034,16 @@ function openAdd(){
   document.getElementById('fResult').value='';
   document.getElementById('fProblems').value='';
   document.getElementById('fSolutions').value='';
+  setComCheckboxes([]);
   document.getElementById('kpiInput').value='';
-  renderKPIList();
+  renderKPIList(); renderImgPreview();
   document.getElementById('modalOverlay').classList.add('open');
   setTimeout(()=>document.getElementById('fName').focus(),100);
 }
 
 function openEdit(id){
   const p=projects.find(x=>x.id===id); if(!p) return;
-  editingId=id; tempKPIs=[...(p.kpi||[])];
+  editingId=id; tempKPIs=[...(p.kpi||[])]; tempImages=[...(p.images||[])];
   document.getElementById('modalTitle').textContent='แก้ไขโครงการ';
   document.getElementById('editId').value=id;
   document.getElementById('fName').value=p.name;
@@ -1793,8 +2056,10 @@ function openEdit(id){
   document.getElementById('fResult').value=p.result||'';
   document.getElementById('fProblems').value=p.problems||'';
   document.getElementById('fSolutions').value=p.solutions||'';
+  document.getElementById('fOwner').value=p.owner||'';
+  setComCheckboxes(p.committees||[]);
   document.getElementById('kpiInput').value='';
-  renderKPIList();
+  renderKPIList(); renderImgPreview();
   document.getElementById('modalOverlay').classList.add('open');
   closeDetail();
 }
@@ -1814,7 +2079,10 @@ function saveProject(){
     result:document.getElementById('fResult').value.trim(),
     kpi:[...tempKPIs],
     problems:document.getElementById('fProblems').value.trim(),
-    solutions:document.getElementById('fSolutions').value.trim()
+    solutions:document.getElementById('fSolutions').value.trim(),
+    owner:document.getElementById('fOwner').value.trim(),
+    committees:getComCheckboxes(),
+    images:[...tempImages]
   };
   if(editingId){
     data.id=editingId;
@@ -1862,6 +2130,23 @@ function openDetail(id){
         <div class="detail-item"><div class="detail-item-label">งบประมาณคงเหลือสุทธิ</div><div class="detail-item-value" style="${remaining<0?'color:var(--red)':''}">${fmtFull(remaining)} บาท</div></div>
       </div>
     </div>
+    <div class="detail-section">
+      <div class="detail-section-title">👥 ผู้รับผิดชอบและอนุกรรมการ</div>
+      <div class="detail-grid">
+        <div class="detail-item" style="grid-column:1/-1">
+          <div class="detail-item-label">ผู้รับผิดชอบโครงการ / หน่วยงาน</div>
+          <div class="detail-item-value">${p.owner?escapeHtml(p.owner):'<span style="color:var(--text3);font-weight:400">ไม่ได้ระบุ</span>'}</div>
+        </div>
+        <div class="detail-item" style="grid-column:1/-1">
+          <div class="detail-item-label">อนุกรรมการที่เกี่ยวข้อง</div>
+          <div class="detail-item-value" style="margin-top:4px">
+            ${(p.committees&&p.committees.length)
+              ? p.committees.map(c=>`<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;background:var(--accent-light);color:var(--accent);margin:2px 3px 2px 0">🏛 ${escapeHtml(c)}</span>`).join('')
+              : '<span style="color:var(--text3);font-weight:400;font-size:12px">ไม่ได้ระบุ</span>'}
+          </div>
+        </div>
+      </div>
+    </div>
     ${p.result?`<div class="detail-section"><div class="detail-section-title">ผลการดำเนินงาน</div><div class="detail-text">${escapeHtml(p.result)}</div></div>`:''}
     <div class="detail-section">
       <div class="detail-section-title">ตัวชี้วัดความสำเร็จของโครงการ (KPI)</div>
@@ -1875,11 +2160,26 @@ function openDetail(id){
       <div class="detail-section-title">แนวทางแก้ไข / ข้อเสนอแนะ</div>
       ${p.solutions?`<div class="solution-box">${escapeHtml(p.solutions)}</div>`:'<span style="font-size:12px;color:var(--text3)">ไม่มีแนวทางแก้ไข</span>'}
     </div>
+    ${(p.images&&p.images.length)?`
+    <div class="detail-section">
+      <div class="detail-section-title">📸 รูปภาพประกอบการดำเนินงาน (${p.images.length} รูป)</div>
+      <div class="detail-img-gallery">
+        ${p.images.map((img,i)=>`
+          <div class="detail-img-item" onclick="openDetailImgLightbox(${p.id},${i})" title="${escapeHtml(img.name||'')}">
+            <img src="${img.dataUrl}" alt="${escapeHtml(img.name||'รูปภาพ')}">
+          </div>
+        `).join('')}
+      </div>
+    </div>`:''}
   `;
   document.getElementById('detailOverlay').classList.add('open');
 }
 function closeDetail(){ document.getElementById('detailOverlay').classList.remove('open'); }
 function escapeHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function openDetailImgLightbox(projectId, idx){
+  const p = projects.find(x=>x.id===projectId); if(!p||!p.images) return;
+  openLightboxGallery(p.images.map(i=>i.dataUrl), idx);
+}
 
 // ===== DELETE =====
 function confirmDelete(id){
@@ -1896,10 +2196,141 @@ function doDelete(){
   saveToLocal(); renderTable(); updateDashboard();
 }
 
+// ===== IMAGE UPLOAD =====
+let tempImages = []; // [{name, dataUrl, size}]
+let lightboxImages = [];
+let lightboxIdx = 0;
+
+function handleImgSelect(e){
+  addImagesToTemp(Array.from(e.target.files));
+  e.target.value = ''; // reset input so same file can be re-selected
+}
+function handleImgDragOver(e){ e.preventDefault(); document.getElementById('imgUploadZone').classList.add('drag-over'); }
+function handleImgDragLeave(e){ document.getElementById('imgUploadZone').classList.remove('drag-over'); }
+function handleImgDrop(e){
+  e.preventDefault();
+  document.getElementById('imgUploadZone').classList.remove('drag-over');
+  addImagesToTemp(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')));
+}
+
+function addImagesToTemp(files){
+  const remaining = 10 - tempImages.length;
+  if(remaining <= 0){ showToast('อัปโหลดรูปได้สูงสุด 10 รูปเท่านั้น'); return; }
+  const toAdd = files.slice(0, remaining);
+  if(files.length > remaining) showToast(`เพิ่มได้อีก ${remaining} รูป (เลือกมา ${files.length} รูป)`);
+  toAdd.forEach(file => {
+    if(file.size > 5*1024*1024){ showToast(`${file.name}: ไฟล์ใหญ่เกิน 5MB`); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      tempImages.push({ name: file.name, dataUrl: ev.target.result, size: file.size });
+      renderImgPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeImgTemp(i){
+  tempImages.splice(i, 1);
+  renderImgPreview();
+}
+
+function renderImgPreview(){
+  const grid = document.getElementById('imgPreviewGrid');
+  const info = document.getElementById('imgCountInfo');
+  const countTxt = document.getElementById('imgCountText');
+  if(!grid) return;
+  if(!tempImages.length){
+    grid.innerHTML = '';
+    info.style.display = 'none';
+    return;
+  }
+  grid.innerHTML = tempImages.map((img, i) => `
+    <div class="img-preview-item">
+      <img src="${img.dataUrl}" alt="${escapeHtml(img.name)}" onclick="openLightboxTemp(${i})">
+      <button class="img-remove" onclick="removeImgTemp(${i})" title="ลบรูป">✕</button>
+      <div class="img-caption">${escapeHtml(img.name)}</div>
+    </div>
+  `).join('');
+  info.style.display = 'inline-flex';
+  countTxt.textContent = `${tempImages.length} รูป`;
+}
+
+function openLightboxTemp(idx){
+  lightboxImages = tempImages.map(i => i.dataUrl);
+  lightboxIdx = idx;
+  showLightbox();
+}
+
+function openLightboxGallery(images, idx){
+  lightboxImages = images;
+  lightboxIdx = idx;
+  showLightbox();
+}
+
+function showLightbox(){
+  document.getElementById('lightboxImg').src = lightboxImages[lightboxIdx];
+  document.getElementById('lightboxCounter').textContent = `${lightboxIdx+1} / ${lightboxImages.length}`;
+  document.getElementById('lightboxOverlay').classList.add('open');
+}
+
+function closeLightbox(){ document.getElementById('lightboxOverlay').classList.remove('open'); }
+
+function lightboxNav(dir){
+  lightboxIdx = (lightboxIdx + dir + lightboxImages.length) % lightboxImages.length;
+  showLightbox();
+}
+
+// ===== COMMITTEE DROPDOWN =====
+const COM_OPTIONS = [
+  {id:'chkPolicy',   value:'นโยบายและแผนงาน'},
+  {id:'chkAcademic', value:'วิชาการ'},
+  {id:'chkTech',     value:'เทคนิคและเทคโนโลยีดิจิทัล'},
+  {id:'chkHR',       value:'บริหารงานบุคคล'},
+];
+
+function toggleComPanel(){
+  const trigger = document.getElementById('comTrigger');
+  const panel   = document.getElementById('comPanel');
+  const isOpen  = panel.classList.contains('open');
+  if(isOpen){ panel.classList.remove('open'); trigger.classList.remove('open'); }
+  else       { panel.classList.add('open');   trigger.classList.add('open'); }
+}
+
+function updateComTrigger(){
+  const selected = getComCheckboxes();
+  const textEl   = document.getElementById('comTriggerText');
+  if(!selected.length){
+    textEl.innerHTML = '<span class="com-placeholder">— เลือกอนุกรรมการที่เกี่ยวข้อง —</span>';
+  } else {
+    textEl.innerHTML = selected.map(v=>`<span class="com-tag">อนุฯ ${v}</span>`).join('');
+  }
+}
+
+function getComCheckboxes(){
+  return COM_OPTIONS.filter(o=>document.getElementById(o.id)?.checked).map(o=>o.value);
+}
+
+function setComCheckboxes(arr){
+  COM_OPTIONS.forEach(o=>{
+    const el = document.getElementById(o.id);
+    if(el) el.checked = arr.includes(o.value);
+  });
+  updateComTrigger();
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e=>{
+  const wrap = document.getElementById('comDropdownWrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('comPanel')?.classList.remove('open');
+    document.getElementById('comTrigger')?.classList.remove('open');
+  }
+});
+
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxrrax2kqvhiZ9Al3bUge9sFj4zHD29gJHbaVD8dXAUd2LAhCQKAuI-tAN1f0_cA12JRg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyvZu3VHCvgoxz3swOic6f1yThJgLQN_I4sso3jKwcfkuFWYAae1xb5WNhcws1-uLyxyQ/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
@@ -1930,6 +2361,147 @@ function _initGasUI(){
   }
 }
 
+function copyGASTemplate(){
+  const tpl = `// ===== Google Apps Script สำหรับ DLTV Report (รองรับรูปภาพ + อนุกรรมการ) =====
+// วางโค้ดนี้ใน Google Apps Script แล้ว Deploy เป็น Web App
+// Execute as: Me | Who has access: Anyone
+
+function doGet(e) {
+  const action = e.parameter.action;
+  if (action === 'getAll') return getAll();
+  return ContentService.createTextOutput(JSON.stringify({success:false,message:'Unknown action'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    const action = payload.action;
+    if (action === 'save')     return saveProject(payload.data);
+    if (action === 'update')   return saveProject(payload.data);
+    if (action === 'delete')   return deleteProject(payload.id);
+    if (action === 'bulkSave') return bulkSave(payload.data);
+    return ok({message:'Unknown action'});
+  } catch(err) {
+    return err_(err.message);
+  }
+}
+
+function getSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ss.getSheetByName('Projects') || ss.getSheets()[0];
+}
+
+function getHeaders() {
+  return [
+    'id', 'name', 'strategy', 'budget', 'spent', 'po', 'status',
+    'result', 'kpi', 'problems', 'solutions', 'quarter',
+    'owner', 'committees',
+    'image_count', 'images_json'
+  ];
+}
+
+function ensureHeaders() {
+  const sheet = getSheet();
+  if (sheet.getLastRow() === 0) {
+    const headerRow = sheet.appendRow(getHeaders());
+    sheet.getRange(1, 1, 1, getHeaders().length)
+      .setBackground('#3b72f0').setFontColor('#ffffff').setFontWeight('bold');
+  }
+}
+
+function rowToObj(row) {
+  const h = getHeaders();
+  const obj = {};
+  h.forEach((k, i) => obj[k] = row[i]);
+  obj.budget = Number(obj.budget) || 0;
+  obj.spent  = Number(obj.spent)  || 0;
+  obj.po     = Number(obj.po)     || 0;
+  obj.kpi    = obj.kpi ? String(obj.kpi).split('|').filter(Boolean) : [];
+  obj.owner  = obj.owner || '';
+  try { obj.committees = obj.committees ? JSON.parse(obj.committees) : []; } catch(e){ obj.committees=[]; }
+  try { obj.images = obj.images_json ? JSON.parse(obj.images_json) : []; } catch(e){ obj.images=[]; }
+  delete obj.images_json; delete obj.image_count;
+  return obj;
+}
+
+function objToRow(d) {
+  const images = d.images || [];
+  return [
+    d.id, d.name, d.strategy,
+    d.budget||0, d.spent||0, d.po||0,
+    d.status, d.result||'', (d.kpi||[]).join('|'),
+    d.problems||'', d.solutions||'', d.quarter||'all',
+    d.owner||'',
+    JSON.stringify(d.committees||[]),
+    images.length,
+    JSON.stringify(images.map(i=>({name:i.name, dataUrl:i.dataUrl})))
+  ];
+}
+
+function getAll() {
+  ensureHeaders();
+  const sheet = getSheet();
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length <= 1) return ok({success:true, data:[]});
+  const data = rows.slice(1).map(rowToObj);
+  return ok({success:true, data});
+}
+
+function saveProject(d) {
+  ensureHeaders();
+  const sheet = getSheet();
+  const rows = sheet.getDataRange().getValues();
+  let rowIdx = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(d.id)) { rowIdx = i + 1; break; }
+  }
+  const row = objToRow(d);
+  if (rowIdx > 0) {
+    sheet.getRange(rowIdx, 1, 1, row.length).setValues([row]);
+  } else {
+    sheet.appendRow(row);
+  }
+  return ok({success:true});
+}
+
+function deleteProject(id) {
+  const sheet = getSheet();
+  const rows = sheet.getDataRange().getValues();
+  for (let i = rows.length - 1; i >= 1; i--) {
+    if (String(rows[i][0]) === String(id)) { sheet.deleteRow(i + 1); break; }
+  }
+  return ok({success:true});
+}
+
+function bulkSave(data) {
+  ensureHeaders();
+  const sheet = getSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
+  if (data && data.length) {
+    const rows = data.map(objToRow);
+    sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
+  }
+  return ok({success:true, count: data ? data.length : 0});
+}
+
+function ok(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+function err_(msg) {
+  return ContentService.createTextOutput(JSON.stringify({success:false, message:msg}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+  navigator.clipboard.writeText(tpl).then(()=>{
+    document.getElementById('gasTemplateCopyStatus').textContent = '✅ คัดลอก GAS Template สำเร็จ (รองรับ owner + อนุกรรมการ + รูปภาพ)';
+    setTimeout(()=>{ document.getElementById('gasTemplateCopyStatus').textContent=''; }, 4000);
+  }).catch(()=>{
+    document.getElementById('gasTemplateCopyStatus').textContent = '❌ ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคัดลอกโค้ดด้วยตนเอง';
+  });
+}
+
 function loadFromSheet(){
   const statusEl=document.getElementById('gsStatus');
   statusEl && (statusEl.innerHTML='<div class="status-msg status-info">⏳ กำลังโหลดข้อมูลจาก Google Sheet...</div>');
@@ -1958,7 +2530,7 @@ function syncAllToSheet(){
 }
 
 function exportCSV(){
-  const headers=['id','name','strategy','budget','spent','po','status','result','kpi','problems','solutions','quarter'];
+  const headers=['id','name','strategy','budget','spent','po','status','result','kpi','problems','solutions','quarter','image_count'];
   const rows=[headers,...projects.map(p=>[
     p.id,'"'+(p.name||'').replace(/"/g,'""')+'"',
     p.strategy,p.budget||0,p.spent||0,p.po||0,p.status,
@@ -1966,7 +2538,8 @@ function exportCSV(){
     '"'+(p.kpi||[]).join('|').replace(/"/g,'""')+'"',
     '"'+(p.problems||'').replace(/"/g,'""')+'"',
     '"'+(p.solutions||'').replace(/"/g,'""')+'"',
-    p.quarter||'all'
+    p.quarter||'all',
+    (p.images||[]).length
   ])];
   const csv=rows.map(r=>r.join(',')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
@@ -1974,26 +2547,30 @@ function exportCSV(){
   a.href=URL.createObjectURL(blob);
   a.download='รายงานผลดำเนินงาน_DLTV_2569.csv';
   a.click();
-  document.getElementById('gsStatus').innerHTML='<div class="status-msg status-ok">✅ ดาวน์โหลด CSV สำเร็จ</div>';
+  document.getElementById('gsStatus').innerHTML='<div class="status-msg status-ok">✅ ดาวน์โหลด CSV สำเร็จ (รูปภาพถูกส่งใน JSON แยกต่างหาก)</div>';
 }
 
 // ===== KEYBOARD =====
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    // modalOverlay (form กรอกข้อมูล) — ไม่ปิดด้วย Escape เพื่อป้องกันข้อมูลหาย
+    if(document.getElementById('lightboxOverlay').classList.contains('open')){ closeLightbox(); return; }
     closeDetail();
     document.getElementById('deleteOverlay').classList.remove('open');
   }
+  if(document.getElementById('lightboxOverlay').classList.contains('open')){
+    if(e.key==='ArrowLeft') lightboxNav(-1);
+    if(e.key==='ArrowRight') lightboxNav(1);
+  }
 });
+
 // modalOverlay: ลบ click-outside ออก — ปิดได้แค่ปุ่ม "ยกเลิก" หรือ "บันทึก" เท่านั้น
 document.getElementById('detailOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeDetail(); });
 document.getElementById('deleteOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
 
 // ===== INIT =====
-loadFromLocal(); // โหลด local ก่อนเพื่อให้หน้าแสดงได้เร็ว
+loadFromLocal();
 updateDashboard();
 _initGasUI();
-// โหลดข้อมูลล่าสุดจาก Google Sheet อัตโนมัติ
 setTimeout(()=>loadFromSheet(), 300);
 </script>
 </body>
