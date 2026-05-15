@@ -2367,39 +2367,71 @@ function addImagesToTemp(files){
     // อ่านเป็น base64
     const reader = new FileReader();
     reader.onload = ev => {
-      placeholder._dataUrl = ev.target.result;
-      renderImgPreview();
-
-      // ถ้าไม่มี GAS → เก็บ dataUrl ไว้ชั่วคราว (ใช้งานได้เฉพาะเครื่องนี้)
-      if(!GAS_ENABLED || !_gasUrl){
-        placeholder.url = ev.target.result;  // fallback
-        placeholder._uploading = false;
+      // resize ก่อน upload เพื่อลดขนาด
+      resizeImage(file, 800).then(base64Full => {
+        placeholder._dataUrl = base64Full;
         renderImgPreview();
-        showToast('⚠️ ยังไม่ได้ตั้งค่า GAS — รูปจะใช้ได้เฉพาะเครื่องนี้');
-        return;
-      }
 
-      // ส่ง base64 ไปอัปโหลดยัง Google Drive ผ่าน GAS
-      const base64 = ev.target.result.split(',')[1];
-      const mimeType = file.type || 'image/jpeg';
-
-      gasPost('uploadImage', { base64, mimeType, fileName: file.name })
-        .then(res => {
-          if(!res.success) throw new Error(res.message||'Upload failed');
-          placeholder.url     = res.url;
-          placeholder.driveId = res.driveId;
+        if(!GAS_ENABLED || !_gasUrl){
+          placeholder.url = base64Full;
           placeholder._uploading = false;
           renderImgPreview();
-          showToast(`📸 อัปโหลด "${file.name}" ขึ้น Drive สำเร็จ`, 2500);
-        })
-        .catch(err => {
-          // fallback: เก็บ dataUrl ไว้ก่อนถ้า Drive ไม่ได้
-          placeholder.url = ev.target.result;
-          placeholder._uploading = false;
-          placeholder._driveError = true;
-          renderImgPreview();
-          showToast(`⚠️ Drive upload ล้มเหลว — รูปใช้ได้เฉพาะเครื่องนี้`, 3000);
-        });
+          showToast('⚠️ ยังไม่ได้ตั้งค่า GAS — รูปจะใช้ได้เฉพาะเครื่องนี้');
+          return;
+        }
+
+        const b64data  = base64Full.split(',')[1];
+        const mimeType = file.type || 'image/jpeg';
+
+        function doUpload(attempt){
+          gasPost('uploadImage', { base64: b64data, mimeType, fileName: file.name })
+            .then(res => {
+              if(!res || !res.success) throw new Error((res&&res.message)||'GAS error');
+              placeholder.url      = res.url;
+              placeholder.driveId  = res.driveId;
+              placeholder._uploading = false;
+              renderImgPreview();
+              showToast(`📸 "${file.name}" อัปโหลดสำเร็จ${attempt>1?' (retry)':''}`, 2500);
+            })
+            .catch(err => {
+              console.error(`Upload attempt ${attempt} failed:`, err.message);
+              if(attempt < 3){
+                showToast(`⏳ retry ${attempt}/2 — "${file.name}"`, 1500);
+                setTimeout(()=>doUpload(attempt+1), 2500);
+              } else {
+                placeholder.url = base64Full;
+                placeholder._uploading = false;
+                placeholder._driveError = true;
+                renderImgPreview();
+                showToast(`⚠️ อัปโหลดไม่สำเร็จหลัง 3 ครั้ง: ${err.message}`, 5000);
+              }
+            });
+        }
+        doUpload(1);
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── Resize รูปก่อน upload ────────────────────────────────────
+function resizeImage(file, maxPx){
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > maxPx || h > maxPx){
+          if(w > h){ h = Math.round(h * maxPx / w); w = maxPx; }
+          else      { w = Math.round(w * maxPx / h); h = maxPx; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   });
