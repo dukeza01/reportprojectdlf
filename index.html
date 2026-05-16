@@ -2864,7 +2864,7 @@ function gasPost(action, payload){
 // CHUNK = 3000 chars → URL รวม ~3200 chars ซึ่ง browser/GAS รับได้ทุกตัว
 // ส่ง parallel กลุ่มละ 3 → เร็วขึ้น ~2x จากเดิม โดยไม่ error
 async function gasUpload(base64, mimeType, fileName){
-  const CHUNK    = 3000;
+  const CHUNK    = 1500;
   const PARALLEL = 3;
   const totalChunks = Math.ceil(base64.length / CHUNK);
   const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,7);
