@@ -2264,10 +2264,10 @@ function openDetail(id){
       <div class="detail-img-gallery">
         ${p.images.map((img,i)=>{
           const src = driveImgUrl(img);
-          const id  = img.driveId||'';
+          const driveId = img.driveId||'';
           return `<div class="detail-img-item" onclick="openDetailImgLightbox(${p.id},${i})" title="${escapeHtml(img.name||'')}">
             <img src="${src}" alt="${escapeHtml(img.name||'รูปภาพ')}"
-              data-drive-id="${id}" data-tried="0"
+              data-drive-id="${driveId}" data-tried="0"
               onerror="onImgError(this)">
           </div>`;
         }).join('')}
@@ -2375,6 +2375,7 @@ function addImagesToTemp(files){
             placeholder.url        = res.url;
             placeholder.publicId   = res.publicId;
             placeholder._uploading = false;
+            placeholder._dataUrl   = res.url; // ใช้ Cloudinary URL แทน base64 ประหยัด memory
             renderImgPreview();
             showToast(`✅ "${file.name}" อัปโหลดสำเร็จ${attempt>1?' (retry)':''}`, 2500);
           })
@@ -2823,7 +2824,7 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzeoffj8uVyCatsl4U2lr0GgzoBKcsiu4VYoQSZG_mJJv171dGHGkw2anODu0OCM-TqvA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzuxA0GeyHOv1Uor8pVHe7a-WQNJX6ChcJM1yaHdEduUEJXiGOD-RABKjfdF02OB0uqfA/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
