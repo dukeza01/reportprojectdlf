@@ -2445,6 +2445,21 @@ function removeImgTemp(i){
   }
   tempImages.splice(i, 1);
   renderImgPreview();
+
+  // อัปเดต images_json ใน Sheet ทันที ไม่รอกดบันทึก
+  // เพื่อป้องกันรูปกลับมาหลัง refresh
+  if(editingId && GAS_ENABLED){
+    const cleanImages = tempImages.map(img=>({
+      name: img.name || '', url: img.url || '', driveId: img.driveId || ''
+    }));
+    const proj = projects.find(p=>p.id==editingId);
+    if(proj){
+      proj.images = cleanImages;
+      saveToLocal(true);
+      gasPost('update', { data: {...proj, images: cleanImages} })
+        .catch(()=>showToast('⚠️ ลบรูปแล้ว แต่ Sync Sheet ไม่สำเร็จ', 3000));
+    }
+  }
 }
 
 function renderImgPreview(){
