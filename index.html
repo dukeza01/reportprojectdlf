@@ -2447,7 +2447,7 @@ function removeImgTemp(i){
   renderImgPreview();
 
   // อัปเดต images_json ใน Sheet ทันที ไม่รอกดบันทึก
-  // เพื่อป้องกันรูปกลับมาหลัง refresh
+  // ใช้ action updateImages (ส่งแค่ id + images → URL สั้น ไม่เกิน JSONP limit)
   if(editingId && GAS_ENABLED){
     const cleanImages = tempImages.map(img=>({
       name: img.name || '', url: img.url || '', driveId: img.driveId || ''
@@ -2456,7 +2456,7 @@ function removeImgTemp(i){
     if(proj){
       proj.images = cleanImages;
       saveToLocal(true);
-      gasPost('update', { data: {...proj, images: cleanImages} })
+      gasJsonp({ action:'updateImages', id: String(editingId), images: JSON.stringify(cleanImages) })
         .catch(()=>showToast('⚠️ ลบรูปแล้ว แต่ Sync Sheet ไม่สำเร็จ', 3000));
     }
   }
@@ -2832,7 +2832,7 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxOov2llDxRZp4dMewQZH10AG3ffkcPJqCdVcKoh4gLSwscYFSnop8hb6rYcltcyNyvDQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzlIFssDpFx2w5aCIWzLHLev3nGSrHiE2Yga7N4AF8UBDHrhtY5mA-0qoHc6AY3Smkdng/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
