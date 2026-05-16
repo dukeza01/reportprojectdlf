@@ -2832,7 +2832,7 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxetJ9UexoQmsS-Nyo1eR2XKpal7JdISl1HF3hI7ZbnZkU2l0tPH1T9Diu0yGOO3yRU_Q/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxOov2llDxRZp4dMewQZH10AG3ffkcPJqCdVcKoh4gLSwscYFSnop8hb6rYcltcyNyvDQ/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
@@ -3156,25 +3156,33 @@ document.getElementById('deleteOverlay').addEventListener('click',e=>{ if(e.targ
   updateDashboard();
 
   // ── โหลด Sheet แบบ background (ไม่บล็อก UI) ──
-  if(GAS_ENABLED && _gasUrl && !_gasUrl.includes('YOUR_GAS')){
+  function syncFromSheet(showToastOnSuccess){
+    if(!GAS_ENABLED || !_gasUrl || _gasUrl.includes('YOUR_GAS')) return;
     const st = document.getElementById('gsStatus');
-
     fetch(`${_gasUrl}?action=getAll`)
       .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
       .then(res=>{
         if(!res.success) throw new Error(res.message||'GAS error');
         if(res.data && res.data.length > 0){
           projects = res.data;
-          saveToLocal(true); // silent — ไม่แสดง toast ตอน sync background
-          updateDashboard(); // refresh เงียบๆ หลังได้ข้อมูลใหม่
+          saveToLocal(true);
+          updateDashboard();
         }
-        if(st) st.innerHTML=`<div class="status-msg status-ok">✅ Sync สำเร็จ ${projects.length} โครงการจาก Google Sheet</div>`;
+        const now = new Date().toLocaleTimeString('th-TH');
+        if(st) st.innerHTML=`<div class="status-msg status-ok">✅ Sync สำเร็จ ${projects.length} โครงการ · อัปเดตล่าสุด ${now}</div>`;
+        if(showToastOnSuccess) showToast(`🔄 ซิงก์ข้อมูลล่าสุดแล้ว (${projects.length} โครงการ)`, 2500);
       })
       .catch(err=>{
         console.warn('Sheet sync failed:', err.message);
         if(st) st.innerHTML=`<div class="status-msg status-err">⚠️ ไม่สามารถ Sync จาก Sheet ได้ — กำลังใช้ข้อมูลในเครื่อง (${err.message})</div>`;
       });
   }
+
+  // โหลดครั้งแรกตอนเปิดหน้า
+  syncFromSheet(false);
+
+  // auto-sync ทุก 5 นาที
+  setInterval(()=>syncFromSheet(true), 5 * 60 * 1000);
 })();
 </script>
 </body>
