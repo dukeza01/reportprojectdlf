@@ -2365,7 +2365,7 @@ function addImagesToTemp(files){
     renderImgPreview();
 
     // resize ก่อน upload เพื่อลดขนาด (อ่านไฟล์ครั้งเดียว ไม่ซ้ำซ้อน)
-    resizeImage(file, 800).then(base64Full => {
+    resizeImage(file, Infinity).then(base64Full => {
       placeholder._dataUrl = base64Full;
       renderImgPreview();
 
@@ -2410,6 +2410,8 @@ function addImagesToTemp(files){
 }
 
 // ── Resize รูปก่อน upload ────────────────────────────────────
+// maxPx = Infinity → ใช้ขนาด original ไม่ resize
+// เก็บ format เดิม (PNG/WebP/GIF) และ quality สูงสุด
 function resizeImage(file, maxPx){
   return new Promise(resolve => {
     const reader = new FileReader();
@@ -2417,14 +2419,17 @@ function resizeImage(file, maxPx){
       const img = new Image();
       img.onload = () => {
         let w = img.width, h = img.height;
-        if(w > maxPx || h > maxPx){
+        if(isFinite(maxPx) && (w > maxPx || h > maxPx)){
           if(w > h){ h = Math.round(h * maxPx / w); w = maxPx; }
           else      { w = Math.round(w * maxPx / h); h = maxPx; }
         }
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.82));
+        // ใช้ format เดิมถ้าเป็น PNG/WebP/GIF มิฉะนั้นใช้ JPEG quality 1.0
+        const outType = (file.type === 'image/png' || file.type === 'image/webp' || file.type === 'image/gif')
+          ? file.type : 'image/jpeg';
+        resolve(canvas.toDataURL(outType, 1.0));
       };
       img.src = ev.target.result;
     };
@@ -2864,7 +2869,7 @@ function gasPost(action, payload){
 // CHUNK = 3000 chars → URL รวม ~3200 chars ซึ่ง browser/GAS รับได้ทุกตัว
 // ส่ง parallel กลุ่มละ 3 → เร็วขึ้น ~2x จากเดิม โดยไม่ error
 async function gasUpload(base64, mimeType, fileName){
-  const CHUNK    = 1500;
+  const CHUNK    = 3000;
   const PARALLEL = 3;
   const totalChunks = Math.ceil(base64.length / CHUNK);
   const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,7);
