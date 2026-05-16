@@ -2861,11 +2861,11 @@ function gasPost(action, payload){
 }
 
 // ── gasUpload: อัปโหลดรูปภาพแบบ chunk ผ่าน JSONP ─────────────
-// CHUNK = 7000 chars (จากเดิม 1500) → ลดจำนวน request ~4-5 เท่า
-// ส่ง chunks แบบ parallel (กลุ่มละ 5) ยกเว้น chunk สุดท้ายที่รอ assemble
+// CHUNK = 3000 chars → URL รวม ~3200 chars ซึ่ง browser/GAS รับได้ทุกตัว
+// ส่ง parallel กลุ่มละ 3 → เร็วขึ้น ~2x จากเดิม โดยไม่ error
 async function gasUpload(base64, mimeType, fileName){
-  const CHUNK    = 7000; // URL-safe limit หลังหัก base URL และ params อื่น
-  const PARALLEL = 5;    // ส่งพร้อมกัน 5 chunk ต่อรอบ
+  const CHUNK    = 3000;
+  const PARALLEL = 3;
   const totalChunks = Math.ceil(base64.length / CHUNK);
   const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,7);
 
