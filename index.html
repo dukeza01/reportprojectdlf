@@ -1118,6 +1118,14 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
               <option value="progress">⏳ อยู่ระหว่างดำเนิน</option>
               <option value="pending">⭕ ยังไม่เริ่ม</option>
             </select>
+            <select id="filterCommittee" class="select-filter" onchange="renderTable()" style="max-width:210px">
+              <option value="">อนุกรรมการทั้งหมด</option>
+              <option value="นโยบายและแผนงาน">ด้านนโยบายและแผนงาน</option>
+              <option value="วิชาการ">ด้านวิชาการ</option>
+              <option value="เทคนิคและเทคโนโลยีดิจิทัล">ด้านเทคนิคและเทคโนโลยีดิจิทัล</option>
+              <option value="บริหารงานบุคคล">ด้านบริหารงานบุคคล</option>
+              <option value="__none__">ไม่ได้ระบุอนุกรรมการ</option>
+            </select>
             <select id="filterQuarterTable" class="select-filter" onchange="renderTable()">
               <option value="">📅 ทุกไตรมาส</option>
               <option value="1">ไตรมาส 1 (ต.ค.–ธ.ค.)</option>
@@ -1592,6 +1600,7 @@ function showPage(page, strategyFilter) {
   if(page==='dashboard') updateDashboard();
   if(page==='projects'){
     if(strategyFilter!==undefined) document.getElementById('filterStrategy').value=strategyFilter;
+    if(strategyFilter!==undefined){ const fc=document.getElementById('filterCommittee'); if(fc) fc.value=''; }
     currentPage=1; renderTable();
   }
 }
@@ -2012,6 +2021,7 @@ function renderTable() {
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span style="user-select:text">${p.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
             ${p.quarter&&p.quarter!=='all'?`<span style="font-size:10px;background:var(--accent-light);color:var(--accent);padding:1px 6px;border-radius:4px;font-weight:600;flex-shrink:0">Q${p.quarter}</span>`:''}
+            ${(p.committees||[]).length>0?`<span style="font-size:10px;background:#f0fdf4;color:#166534;padding:1px 6px;border-radius:4px;font-weight:600;flex-shrink:0">👥 ${(p.committees||[]).map(c=>c.replace('ด้าน','')).join(', ')}</span>`:''}
           </div>
         </td>
         <td><span class="badge ${S_BADGE[p.strategy]}">${S_NAMES[p.strategy]}</span></td>
@@ -2098,12 +2108,27 @@ function getFiltered(){
   const fs=document.getElementById('filterStrategy').value;
   const fst=document.getElementById('filterStatus').value;
   const fq=(document.getElementById('filterQuarterTable')||{}).value||'';
-  return projects.filter(p=>
-    (!q||p.name.toLowerCase().includes(q)) &&
-    (!fs||p.strategy==fs) &&
-    (!fst||p.status===fst) &&
-    (!fq||p.quarter===fq||p.quarter==='all')
-  );
+  const fc=(document.getElementById('filterCommittee')||{}).value||'';
+  return projects.filter(p=>{
+    if(q && !p.name.toLowerCase().includes(q)) return false;
+    if(fs && p.strategy!=fs) return false;
+    if(fst && p.status!==fst) return false;
+    if(fq && p.quarter!==fq && p.quarter!=='all') return false;
+    if(fc){
+      const coms = p.committees || [];
+      if(fc==='__none__') return coms.length===0;
+      return coms.some(c=>c.includes(fc));
+    }
+    return true;
+  });
+}
+
+function filterByCommittee(key){
+  showPage('projects');
+  setTimeout(()=>{
+    const el=document.getElementById('filterCommittee');
+    if(el){ el.value=key; renderTable(); }
+  }, 80);
 }
 
 // ===== MODAL =====
@@ -2666,7 +2691,7 @@ function renderCommitteeSection(fp) {
       const remaining = d.budget - d.spent - d.po;
       const barColor = pct >= 90 ? 'var(--red)' : pct >= 70 ? 'var(--amber)' : c.color;
       return `
-        <div class="metric-card" style="background:linear-gradient(135deg,${c.colorLight},${c.colorLight});border-color:${c.color}33;position:relative;overflow:hidden">
+        <div class="metric-card" style="background:linear-gradient(135deg,${c.colorLight},${c.colorLight});border-color:${c.color}33;position:relative;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s" onclick="filterByCommittee('${c.key}')" title="ดูโครงการของอนุกรรมการนี้" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px ${c.color}22'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
           <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${c.color};border-radius:4px 0 0 4px"></div>
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
             <span style="font-size:18px">${c.icon}</span>
@@ -2695,7 +2720,7 @@ function renderCommitteeSection(fp) {
     const pct = d.budget > 0 ? Math.round((d.spent + d.po) / d.budget * 100) : 0;
     const barColor = pct >= 90 ? '#dc2626' : pct >= 70 ? '#d97706' : c.color;
     const budgetShare = totalBudget > 0 ? Math.round(d.budget / totalBudget * 100) : 0;
-    return `<tr>
+    return `<tr class="data-row" style="cursor:pointer" onclick="filterByCommittee('${c.key}')" title="คลิกเพื่อดูโครงการของอนุกรรมการนี้">
       <td>
         <div style="display:flex;align-items:center;gap:7px">
           <span style="font-size:15px">${c.icon}</span>
