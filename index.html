@@ -840,8 +840,233 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
 }
 @media (max-width: 640px) {
   .sidebar { display: none; }
+  .sidebar.open { display: flex; width: 80vw; max-width: 280px; box-shadow: 0 0 30px rgba(0,0,0,.3); }
   .main { margin-left: 0; }
   .metrics-top { grid-template-columns: 1fr 1fr; }
+  .topbar { padding: .65rem .9rem !important; gap: 8px; flex-wrap: wrap; }
+  .topbar-title { font-size: 15px !important; }
+  .topbar-sub { font-size: 11px !important; }
+  .topbar-actions { gap: 4px !important; flex-wrap: wrap; }
+  .btn-sm { padding: 6px 8px !important; font-size: 12px !important; }
+  .hamburger-btn { display: inline-flex !important; }
+  .a11y-bar { padding: 6px 10px !important; }
+  .a11y-btn { min-width: 38px !important; min-height: 38px !important; font-size: 16px !important; }
+}
+
+/* ── Accessibility: font scaling + high-contrast for elderly users ── */
+html { font-size: var(--font-scale, 100%); }
+.hamburger-btn {
+  display: none;
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  width: 40px; height: 40px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text);
+}
+.hamburger-btn:active { background: var(--surface2); }
+.a11y-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 99px;
+  padding: 4px 6px;
+  margin-right: 6px;
+}
+.a11y-bar-label {
+  font-size: 11px;
+  color: var(--text2);
+  padding: 0 6px;
+  user-select: none;
+}
+.a11y-btn {
+  min-width: 32px;
+  min-height: 32px;
+  border: none;
+  background: var(--surface);
+  border-radius: 99px;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.a11y-btn:hover { background: var(--accent-light); color: var(--accent); transform: translateY(-1px); }
+.a11y-btn:active { transform: translateY(0); }
+.a11y-btn.reset { font-size: 11px; padding: 0 8px; }
+.a11y-btn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+body.high-contrast {
+  --bg: #fff;
+  --surface: #fff;
+  --surface2: #f5f5f5;
+  --border: #000;
+  --border2: #000;
+  --text: #000;
+  --text2: #222;
+  --text3: #444;
+}
+body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2px !important; }
+
+/* ── LIVE TRACKING page ── */
+.lt-header {
+  background: linear-gradient(135deg, #086858 0%, #1645e0 60%, #118c91 100%);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-lg);
+}
+.lt-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.lt-header .sub { font-size: 13px; opacity: .9; }
+.lt-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.lt-pulse-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, .7);
+  animation: lt-pulse 1.8s infinite;
+}
+@keyframes lt-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, .7); }
+  70%  { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+.lt-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+.lt-stat {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.lt-stat::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: var(--accent);
+}
+.lt-stat.done::before    { background: var(--green); }
+.lt-stat.progress::before{ background: var(--amber); }
+.lt-stat.pending::before { background: var(--text3); }
+.lt-stat-label { font-size: 12px; color: var(--text2); font-weight: 500; margin-bottom: 6px; }
+.lt-stat-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.lt-stat-delta { font-size: 11px; margin-top: 4px; padding: 2px 8px; border-radius: 99px; display: inline-block; }
+.lt-stat-delta.up   { background: var(--green-light); color: var(--green); }
+.lt-stat-delta.down { background: var(--red-light); color: var(--red); }
+.lt-stat-delta.zero { background: var(--surface2); color: var(--text3); }
+.lt-feed {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+}
+.lt-feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: .75rem;
+  border-bottom: 1.5px solid var(--border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lt-feed-title { font-size: 16px; font-weight: 700; }
+.lt-feed-meta { font-size: 12px; color: var(--text2); }
+.lt-feed-list { display: flex; flex-direction: column; gap: 10px; }
+.lt-feed-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface2);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  align-items: flex-start;
+  animation: lt-slide-in .35s ease-out;
+}
+@keyframes lt-slide-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.lt-feed-item.status-done    { border-left-color: var(--green); }
+.lt-feed-item.status-progress{ border-left-color: var(--amber); }
+.lt-feed-item.status-pending { border-left-color: var(--text3); }
+.lt-feed-item.created        { border-left-color: var(--s4); background: var(--s4-light); }
+.lt-feed-item.deleted        { border-left-color: var(--red); background: var(--red-light); }
+.lt-feed-icon {
+  width: 32px; height: 32px;
+  background: var(--surface);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.lt-feed-body { flex: 1; min-width: 0; }
+.lt-feed-name { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+.lt-feed-change { font-size: 13px; color: var(--text2); }
+.lt-feed-change b { color: var(--text); font-weight: 600; }
+.lt-feed-time { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.lt-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text3);
+  font-size: 14px;
+}
+.lt-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.lt-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  user-select: none;
+}
+.lt-toggle input { accent-color: var(--accent); }
+@media (max-width: 900px) {
+  .lt-stat-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .lt-stat-grid { grid-template-columns: 1fr 1fr; }
+  .lt-stat-value { font-size: 22px; }
+  .lt-feed-item { flex-direction: column; }
+  .lt-feed-time { align-self: flex-end; }
+  .lt-header { padding: 1rem; }
+  .lt-header h2 { font-size: 17px; }
 }
 </style>
 </head>
@@ -887,6 +1112,10 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
         งบบริหารสำนักงาน
       </button>
       <div class="nav-section">จัดการ</div>
+      <button class="nav-item" onclick="showPage('livetracking')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
+        ติดตามสด <span style="margin-left:auto;background:#4ade80;width:8px;height:8px;border-radius:50%;animation:lt-pulse 1.8s infinite"></span>
+      </button>
       <button class="nav-item" onclick="showPage('projects','')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         โครงการทั้งหมด
@@ -904,12 +1133,23 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
     <!-- Topbar -->
     <div class="topbar">
       <div class="topbar-left">
+        <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="เปิด/ปิดเมนู">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div>
           <div class="topbar-title" id="topbar-title">Dashboard สรุปภาพรวม</div>
           <div class="topbar-sub" id="topbar-sub">รายงานผลการดำเนินงานโครงการ ปีงบประมาณ พ.ศ. 2569</div>
         </div>
       </div>
       <div class="topbar-actions">
+        <!-- ─── Accessibility controls for elderly users ─── -->
+        <div class="a11y-bar" role="group" aria-label="ปรับขนาดตัวอักษร">
+          <button class="a11y-btn" onclick="changeFontScale(-10)" title="ลดขนาดตัวอักษร" aria-label="ลดขนาดตัวอักษร">A−</button>
+          <span class="a11y-bar-label" id="fontScaleLabel">100%</span>
+          <button class="a11y-btn" onclick="changeFontScale(10)" title="เพิ่มขนาดตัวอักษร" aria-label="เพิ่มขนาดตัวอักษร">A+</button>
+          <button class="a11y-btn reset" onclick="resetFontScale()" title="คืนค่าเริ่มต้น" aria-label="คืนค่าเริ่มต้น">รีเซ็ต</button>
+          <button class="a11y-btn" onclick="toggleHighContrast()" title="โหมดความเปรียบต่างสูง" aria-label="โหมดความเปรียบต่างสูง" id="hcBtn">◐</button>
+        </div>
         <select class="quarter-select" id="quarterSelect" onchange="onQuarterChange()">
           <option value="all">📅 ทุกไตรมาส</option>
           <option value="1">ไตรมาส 1 (ต.ค.–ธ.ค. 68)</option>
@@ -1319,9 +1559,68 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
         </div>
       </div>
 
+      <!-- ===== LIVE TRACKING ===== -->
+      <div id="page-livetracking" style="display:none">
+        <div class="lt-header">
+          <div>
+            <h2>📡 ติดตามสด · Live Tracking</h2>
+            <div class="sub">ระบบติดตามผลการดำเนินงานแบบเรียลไทม์ · อัปเดตอัตโนมัติทุก <span id="ltIntervalLabel">30</span> วินาที</div>
+          </div>
+          <div class="lt-pulse">
+            <span class="lt-pulse-dot"></span>
+            <span id="ltLiveStatus">กำลังเชื่อมต่อ...</span>
+          </div>
+        </div>
+
+        <div class="lt-stat-grid" id="ltStatGrid">
+          <div class="lt-stat">
+            <div class="lt-stat-label">โครงการทั้งหมด</div>
+            <div class="lt-stat-value" id="ltStatTotal">—</div>
+            <div class="lt-stat-delta zero" id="ltStatTotalDelta">±0</div>
+          </div>
+          <div class="lt-stat done">
+            <div class="lt-stat-label">✅ เสร็จสิ้น</div>
+            <div class="lt-stat-value" id="ltStatDone">—</div>
+            <div class="lt-stat-delta zero" id="ltStatDoneDelta">±0</div>
+          </div>
+          <div class="lt-stat progress">
+            <div class="lt-stat-label">⏳ กำลังดำเนินการ</div>
+            <div class="lt-stat-value" id="ltStatProgress">—</div>
+            <div class="lt-stat-delta zero" id="ltStatProgressDelta">±0</div>
+          </div>
+          <div class="lt-stat pending">
+            <div class="lt-stat-label">⏸ ยังไม่เริ่ม</div>
+            <div class="lt-stat-value" id="ltStatPending">—</div>
+            <div class="lt-stat-delta zero" id="ltStatPendingDelta">±0</div>
+          </div>
+        </div>
+
+        <div class="lt-feed">
+          <div class="lt-feed-header">
+            <div>
+              <div class="lt-feed-title">📋 ความเคลื่อนไหวล่าสุด</div>
+              <div class="lt-feed-meta">
+                อัปเดตล่าสุด: <b id="ltLastSync">—</b> ·
+                ใช้ข้อมูล: <b id="ltDataSource">Local</b>
+              </div>
+            </div>
+            <div class="lt-controls">
+              <label class="lt-toggle"><input type="checkbox" id="ltAutoChk" checked onchange="toggleLiveAutoRefresh()"> เปิดอัตโนมัติ</label>
+              <button class="btn btn-sm btn-primary" onclick="forceLiveSync()">🔄 รีเฟรชเดี๋ยวนี้</button>
+            </div>
+          </div>
+          <div class="lt-feed-list" id="ltFeedList">
+            <div class="lt-empty">⏳ กำลังรอข้อมูล... แตะ "รีเฟรชเดี๋ยวนี้" เพื่อโหลดล่าสุด</div>
+          </div>
+        </div>
+      </div><!-- /page-livetracking -->
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /layout -->
+
+<!-- Mobile sidebar backdrop -->
+<div id="sidebarBackdrop" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:49"></div>
 
 <!-- MODAL: Add/Edit -->
 <div class="modal-overlay" id="modalOverlay">
@@ -1646,16 +1945,18 @@ function resetToDefault() {
 
 // ===== NAVIGATION =====
 function showPage(page, strategyFilter) {
-  ['dashboard','projects','gsheet'].forEach(p => {
-    document.getElementById('page-'+p).style.display = p===page?'block':'none';
+  ['dashboard','projects','gsheet','livetracking'].forEach(p => {
+    const el = document.getElementById('page-'+p);
+    if (el) el.style.display = p===page?'block':'none';
   });
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   if(event&&event.currentTarget) event.currentTarget.classList.add('active');
 
   const titles = {
-    dashboard: ['Dashboard สรุปภาพรวม','รายงานผลการดำเนินงานโครงการ ปีงบประมาณ พ.ศ. 2569'],
-    projects:  ['รายการโครงการ','โครงการทั้งหมด 5 ยุทธศาสตร์'],
-    gsheet:    ['Google Sheets','นำเข้า / ส่งออกข้อมูล']
+    dashboard:    ['Dashboard สรุปภาพรวม','รายงานผลการดำเนินงานโครงการ ปีงบประมาณ พ.ศ. 2569'],
+    projects:     ['รายการโครงการ','โครงการทั้งหมด 5 ยุทธศาสตร์'],
+    gsheet:       ['Google Sheets','นำเข้า / ส่งออกข้อมูล'],
+    livetracking: ['📡 ติดตามสด','ระบบติดตามผลการดำเนินงานแบบเรียลไทม์']
   };
   document.getElementById('topbar-title').textContent=titles[page][0];
   document.getElementById('topbar-sub').textContent=titles[page][1];
@@ -1666,7 +1967,272 @@ function showPage(page, strategyFilter) {
     if(strategyFilter!==undefined){ const fc=document.getElementById('filterCommittee'); if(fc) fc.value=''; }
     currentPage=1; renderTable();
   }
+  if(page==='livetracking') renderLiveTracking();
+
+  // auto-close mobile sidebar after nav
+  if (window.innerWidth <= 640) {
+    const sb = document.querySelector('.sidebar');
+    const bd = document.getElementById('sidebarBackdrop');
+    if (sb) sb.classList.remove('open');
+    if (bd) bd.style.display = 'none';
+  }
 }
+
+// ===== MOBILE SIDEBAR =====
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  const open = sb.classList.toggle('open');
+  bd.style.display = open ? 'block' : 'none';
+}
+
+// ===== ACCESSIBILITY: font scaling + high contrast =====
+const FONT_SCALE_KEY = 'dltv_font_scale';
+const HIGH_CONTRAST_KEY = 'dltv_high_contrast';
+const FONT_SCALE_MIN = 80;
+const FONT_SCALE_MAX = 200;
+function getFontScale() {
+  const v = parseInt(localStorage.getItem(FONT_SCALE_KEY) || '100', 10);
+  return isNaN(v) ? 100 : v;
+}
+function applyFontScale(pct) {
+  pct = Math.max(FONT_SCALE_MIN, Math.min(FONT_SCALE_MAX, pct));
+  document.documentElement.style.setProperty('--font-scale', pct + '%');
+  const lbl = document.getElementById('fontScaleLabel');
+  if (lbl) lbl.textContent = pct + '%';
+  try { localStorage.setItem(FONT_SCALE_KEY, String(pct)); } catch(e){}
+}
+function changeFontScale(delta) {
+  applyFontScale(getFontScale() + delta);
+}
+function resetFontScale() {
+  applyFontScale(100);
+}
+function toggleHighContrast() {
+  const on = document.body.classList.toggle('high-contrast');
+  try { localStorage.setItem(HIGH_CONTRAST_KEY, on ? '1' : '0'); } catch(e){}
+  const btn = document.getElementById('hcBtn');
+  if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+}
+// Apply saved a11y prefs immediately on script load
+(function initA11y(){
+  applyFontScale(getFontScale());
+  if (localStorage.getItem(HIGH_CONTRAST_KEY) === '1') {
+    document.body && document.body.classList.add('high-contrast');
+    const btn = document.getElementById('hcBtn');
+    if (btn) btn.setAttribute('aria-pressed', 'true');
+  }
+})();
+
+// ===== LIVE TRACKING =====
+const LT_INTERVAL_MS = 30000;
+const LT_FEED_KEY = 'dltv_lt_feed';
+const LT_SNAPSHOT_KEY = 'dltv_lt_snapshot';
+const LT_FEED_MAX = 50;
+let _ltTimer = null;
+let _ltAuto  = true;
+
+function _ltLoadFeed() {
+  try { return JSON.parse(localStorage.getItem(LT_FEED_KEY) || '[]'); } catch(e){ return []; }
+}
+function _ltSaveFeed(feed) {
+  try { localStorage.setItem(LT_FEED_KEY, JSON.stringify(feed.slice(0, LT_FEED_MAX))); } catch(e){}
+}
+function _ltLoadSnapshot() {
+  try { return JSON.parse(localStorage.getItem(LT_SNAPSHOT_KEY) || 'null'); } catch(e){ return null; }
+}
+function _ltSaveSnapshot(snap) {
+  try { localStorage.setItem(LT_SNAPSHOT_KEY, JSON.stringify(snap)); } catch(e){}
+}
+function _ltProjectFingerprint(p) {
+  return {
+    id: p.id, name: p.name, status: p.status,
+    budget: p.budget||0, spent: p.spent||0, po: p.po||0,
+    result: p.result||'', problems: p.problems||'', solutions: p.solutions||'',
+    owner: p.owner||'', quarter: p.quarter||''
+  };
+}
+function _ltDiff(prev, curr) {
+  const events = [];
+  const prevMap = {};
+  (prev||[]).forEach(p => prevMap[p.id] = p);
+  const currMap = {};
+  (curr||[]).forEach(p => currMap[p.id] = p);
+
+  (curr||[]).forEach(p => {
+    const before = prevMap[p.id];
+    const f = _ltProjectFingerprint(p);
+    if (!before) {
+      events.push({ type:'created', id:p.id, name:p.name, status:p.status, ts:Date.now(), change:'โครงการใหม่' });
+      return;
+    }
+    const changes = [];
+    if (before.status !== f.status) changes.push({ field:'สถานะ', from:_statusLabel(before.status), to:_statusLabel(f.status) });
+    if (before.budget !== f.budget) changes.push({ field:'งบประมาณ', from:_money(before.budget), to:_money(f.budget) });
+    if (before.spent !== f.spent)   changes.push({ field:'ใช้จ่าย', from:_money(before.spent), to:_money(f.spent) });
+    if (before.po !== f.po)         changes.push({ field:'PO', from:_money(before.po), to:_money(f.po) });
+    if (before.result !== f.result) changes.push({ field:'ผลการดำเนินงาน', from:'', to:f.result ? '(อัปเดต)' : '(ลบ)' });
+    if (before.problems !== f.problems) changes.push({ field:'ปัญหา', from:'', to:'(อัปเดต)' });
+    if (before.solutions !== f.solutions) changes.push({ field:'แนวทางแก้ไข', from:'', to:'(อัปเดต)' });
+    if (before.owner !== f.owner)   changes.push({ field:'ผู้รับผิดชอบ', from:before.owner||'-', to:f.owner||'-' });
+    if (changes.length) {
+      events.push({ type:'updated', id:p.id, name:p.name, status:p.status, ts:Date.now(), changes });
+    }
+  });
+  (prev||[]).forEach(p => {
+    if (!currMap[p.id]) {
+      events.push({ type:'deleted', id:p.id, name:p.name, ts:Date.now(), change:'ถูกลบ' });
+    }
+  });
+  return events;
+}
+function _statusLabel(s) {
+  return s==='done'?'เสร็จสิ้น': s==='progress'?'กำลังดำเนินการ': s==='pending'?'ยังไม่เริ่ม': s||'-';
+}
+function _money(n) {
+  return (Number(n)||0).toLocaleString('th-TH') + ' ฿';
+}
+function _timeAgo(ts) {
+  const s = Math.max(0, Math.floor((Date.now()-ts)/1000));
+  if (s < 60) return s + ' วินาทีที่แล้ว';
+  if (s < 3600) return Math.floor(s/60) + ' นาทีที่แล้ว';
+  if (s < 86400) return Math.floor(s/3600) + ' ชั่วโมงที่แล้ว';
+  return Math.floor(s/86400) + ' วันที่แล้ว';
+}
+
+function renderLiveTracking() {
+  if (!Array.isArray(projects)) return;
+  // Stats
+  const done = projects.filter(p=>p.status==='done').length;
+  const prog = projects.filter(p=>p.status==='progress').length;
+  const pend = projects.filter(p=>p.status==='pending').length;
+  const tot  = projects.length;
+
+  const snap = _ltLoadSnapshot();
+  const prevDone = snap ? snap.filter(p=>p.status==='done').length : done;
+  const prevProg = snap ? snap.filter(p=>p.status==='progress').length : prog;
+  const prevPend = snap ? snap.filter(p=>p.status==='pending').length : pend;
+  const prevTot  = snap ? snap.length : tot;
+
+  const set = (id, v, delta) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = v;
+    const dEl = document.getElementById(id+'Delta');
+    if (dEl) {
+      const sign = delta>0?'+':(delta<0?'':'±');
+      dEl.textContent = sign + delta;
+      dEl.className = 'lt-stat-delta ' + (delta>0?'up':(delta<0?'down':'zero'));
+    }
+  };
+  set('ltStatTotal',   tot,  tot  - prevTot);
+  set('ltStatDone',    done, done - prevDone);
+  set('ltStatProgress',prog, prog - prevProg);
+  set('ltStatPending', pend, pend - prevPend);
+
+  // Feed
+  const feed = _ltLoadFeed();
+  const list = document.getElementById('ltFeedList');
+  if (!list) return;
+  if (!feed.length) {
+    list.innerHTML = '<div class="lt-empty">⏳ ยังไม่มีความเคลื่อนไหว · ระบบจะแสดงการเปลี่ยนแปลงทันทีเมื่อมีข้อมูลใหม่จาก Google Sheet</div>';
+    return;
+  }
+  list.innerHTML = feed.map(ev => {
+    const icon = ev.type==='created' ? '✨' : ev.type==='deleted' ? '🗑️' : ev.status==='done' ? '✅' : ev.status==='progress' ? '⏳' : '📝';
+    let change = '';
+    if (ev.type==='created' || ev.type==='deleted') {
+      change = ev.change;
+    } else if (ev.changes) {
+      change = ev.changes.map(c => `<b>${c.field}</b>: ${c.from} → ${c.to}`).join(' · ');
+    }
+    return `<div class="lt-feed-item ${ev.type==='created'?'created':ev.type==='deleted'?'deleted':'status-'+ev.status}">
+      <div class="lt-feed-icon">${icon}</div>
+      <div class="lt-feed-body">
+        <div class="lt-feed-name">${_esc(ev.name||'(ไม่ระบุชื่อ)')}</div>
+        <div class="lt-feed-change">${change}</div>
+      </div>
+      <div class="lt-feed-time">${_timeAgo(ev.ts)}</div>
+    </div>`;
+  }).join('');
+
+  const lastEl = document.getElementById('ltLastSync');
+  if (lastEl) lastEl.textContent = new Date().toLocaleTimeString('th-TH');
+  const srcEl = document.getElementById('ltDataSource');
+  if (srcEl) srcEl.textContent = (typeof GAS_ENABLED!=='undefined' && GAS_ENABLED && _gasUrl && !_gasUrl.includes('YOUR_GAS')) ? 'Google Sheet' : 'Local Storage';
+}
+function _esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function _ltRecord(events) {
+  if (!events || !events.length) return;
+  const feed = _ltLoadFeed();
+  events.forEach(e => feed.unshift(e));
+  _ltSaveFeed(feed);
+}
+
+// Called after every sync/update to detect changes
+function ltCaptureSnapshot() {
+  const curr = (projects||[]).map(_ltProjectFingerprint);
+  const prev = _ltLoadSnapshot();
+  if (prev) {
+    const events = _ltDiff(prev, curr);
+    _ltRecord(events);
+  }
+  _ltSaveSnapshot(curr);
+}
+
+function toggleLiveAutoRefresh() {
+  _ltAuto = document.getElementById('ltAutoChk').checked;
+  const st = document.getElementById('ltLiveStatus');
+  if (st) st.textContent = _ltAuto ? 'อัปเดตอัตโนมัติ' : 'หยุดชั่วคราว';
+  if (_ltAuto) _ltStartTimer();
+  else _ltStopTimer();
+}
+function _ltStartTimer() {
+  _ltStopTimer();
+  _ltTimer = setInterval(() => {
+    if (typeof window._syncFromSheetSilent === 'function') {
+      window._syncFromSheetSilent().then(() => {
+        ltCaptureSnapshot();
+        if (document.getElementById('page-livetracking').style.display !== 'none') {
+          renderLiveTracking();
+        }
+      });
+    } else {
+      ltCaptureSnapshot();
+      if (document.getElementById('page-livetracking').style.display !== 'none') {
+        renderLiveTracking();
+      }
+    }
+  }, LT_INTERVAL_MS);
+}
+function _ltStopTimer() {
+  if (_ltTimer) { clearInterval(_ltTimer); _ltTimer = null; }
+}
+function forceLiveSync() {
+  const st = document.getElementById('ltLiveStatus');
+  if (st) st.textContent = 'กำลังโหลด...';
+  const after = () => {
+    ltCaptureSnapshot();
+    renderLiveTracking();
+    if (st) st.textContent = _ltAuto ? 'อัปเดตอัตโนมัติ' : 'หยุดชั่วคราว';
+  };
+  if (typeof window._syncFromSheetSilent === 'function') {
+    window._syncFromSheetSilent().then(after).catch(after);
+  } else {
+    after();
+  }
+}
+
+// Start live tracking timer once on script load
+setTimeout(() => {
+  // initial snapshot if none
+  if (!_ltLoadSnapshot()) _ltSaveSnapshot((projects||[]).map(_ltProjectFingerprint));
+  _ltStartTimer();
+  const st = document.getElementById('ltLiveStatus');
+  if (st) st.textContent = 'อัปเดตอัตโนมัติ';
+}, 1500);
 
 function filterByStatus(status) {
   document.getElementById('filterStatus').value=status;
