@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ระบบรายงานผลการดำเนินงานโครงการ พ.ศ. 2569 | มูลนิธิการศึกษาทางไกลผ่านดาวเทียม</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1161,6 +1163,10 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           พิมพ์
         </button>
+        <button class="btn btn-sm" onclick="openPdfModal()" style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(220,38,38,.3)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>
+          Export PDF
+        </button>
         <button class="btn btn-sm btn-teal" onclick="showPage('gsheet')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           นำเข้า/ส่งออก
@@ -1817,6 +1823,181 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
 </style>
 
 <div class="toast" id="toast"></div>
+
+<!-- ===== PDF EXPORT MODAL ===== -->
+<style>
+.pdf-modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.55); z-index:600;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.pdf-modal-overlay.open { display:flex; }
+.pdf-modal {
+  background:#fff;
+  border-radius:16px;
+  box-shadow:0 8px 48px rgba(0,0,0,.2);
+  width:520px; max-width:95vw;
+  overflow:hidden;
+  animation:popupIn .25s cubic-bezier(.34,1.56,.64,1);
+}
+.pdf-modal-header {
+  background:linear-gradient(135deg,#dc2626,#ef4444);
+  color:#fff;
+  padding:1.25rem 1.5rem;
+  display:flex; align-items:center; gap:10px; justify-content:space-between;
+}
+.pdf-modal-title { font-size:17px; font-weight:700; }
+.pdf-modal-close {
+  background:rgba(255,255,255,.2); border:none; color:#fff;
+  width:32px; height:32px; border-radius:50%;
+  font-size:16px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .15s;
+}
+.pdf-modal-close:hover { background:rgba(255,255,255,.35); }
+.pdf-modal-body { padding:1.5rem; }
+.pdf-option {
+  display:flex; align-items:flex-start; gap:12px;
+  padding:1rem; border-radius:10px;
+  border:2px solid var(--border);
+  cursor:pointer; transition:all .15s;
+  margin-bottom:10px; background:#fff;
+}
+.pdf-option:hover { border-color:#dc2626; background:#fff5f5; }
+.pdf-option.selected { border-color:#dc2626; background:#fff5f5; }
+.pdf-option-icon {
+  width:42px; height:42px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+  background:linear-gradient(135deg,#fef2f2,#fee2e2);
+}
+.pdf-option-title { font-size:14px; font-weight:700; color:#1c2333; }
+.pdf-option-desc { font-size:12px; color:#6b7280; margin-top:2px; line-height:1.5; }
+.pdf-quarter-select {
+  width:100%; padding:8px 12px;
+  border:1.5px solid var(--border2);
+  border-radius:8px; font-size:14px;
+  font-family:'Sarabun',sans-serif;
+  background:var(--surface2); color:var(--text);
+  margin-top:10px; margin-bottom:4px;
+}
+.pdf-quarter-select:focus { outline:none; border-color:#dc2626; }
+.pdf-modal-footer {
+  padding:1rem 1.5rem;
+  border-top:1px solid var(--border);
+  display:flex; gap:10px; justify-content:flex-end;
+}
+.pdf-cancel-btn {
+  padding:8px 20px; border-radius:8px;
+  border:1.5px solid var(--border2);
+  background:#fff; font-size:14px;
+  font-family:'Sarabun',sans-serif; cursor:pointer;
+  color:var(--text2); transition:all .15s;
+}
+.pdf-cancel-btn:hover { background:var(--surface2); }
+.pdf-gen-btn {
+  padding:8px 24px; border-radius:8px;
+  background:linear-gradient(135deg,#dc2626,#ef4444);
+  color:#fff; border:none; font-size:14px; font-weight:700;
+  font-family:'Sarabun',sans-serif; cursor:pointer;
+  box-shadow:0 2px 10px rgba(220,38,38,.3);
+  transition:all .15s; display:flex; align-items:center; gap:6px;
+}
+.pdf-gen-btn:hover { background:linear-gradient(135deg,#b91c1c,#dc2626); transform:translateY(-1px); }
+.pdf-gen-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+.pdf-progress {
+  display:none; margin-top:12px;
+  background:#f1f5f9; border-radius:8px; padding:10px 14px;
+  font-size:13px; color:#374151;
+}
+.pdf-progress.show { display:block; }
+.pdf-progress-bar-track {
+  height:6px; background:#e2e8f0; border-radius:99px;
+  overflow:hidden; margin-top:6px;
+}
+.pdf-progress-bar-fill {
+  height:100%; border-radius:99px;
+  background:linear-gradient(90deg,#dc2626,#ef4444);
+  transition:width .4s ease;
+}
+</style>
+
+<div class="pdf-modal-overlay" id="pdfModalOverlay">
+  <div class="pdf-modal">
+    <div class="pdf-modal-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>
+        <span class="pdf-modal-title">Export รายงาน PDF</span>
+      </div>
+      <button class="pdf-modal-close" onclick="closePdfModal()">✕</button>
+    </div>
+    <div class="pdf-modal-body">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:14px">เลือกประเภทรายงานที่ต้องการ Export เป็น PDF</div>
+
+      <div class="pdf-option selected" id="pdfOpt1" onclick="selectPdfOpt(1)">
+        <div class="pdf-option-icon">📊</div>
+        <div>
+          <div class="pdf-option-title">รายงานสรุปภาพรวมยุทธศาสตร์</div>
+          <div class="pdf-option-desc">สรุปผลการดำเนินงานรายยุทธศาสตร์ทั้ง 5 ยุทธศาสตร์ · งบประมาณ · สถานะโครงการ · ตารางสรุปรวม</div>
+        </div>
+      </div>
+
+      <div class="pdf-option" id="pdfOpt2" onclick="selectPdfOpt(2)">
+        <div class="pdf-option-icon">📋</div>
+        <div>
+          <div class="pdf-option-title">รายงานสรุปรายโครงการ</div>
+          <div class="pdf-option-desc">รายละเอียดผลการดำเนินงานแต่ละโครงการ · ผลที่ได้รับ · KPI · ปัญหาและแนวทางแก้ไข</div>
+        </div>
+      </div>
+
+      <div class="pdf-option" id="pdfOpt3" onclick="selectPdfOpt(3)">
+        <div class="pdf-option-icon">📑</div>
+        <div>
+          <div class="pdf-option-title">รายงานฉบับสมบูรณ์ (ภาพรวม + รายโครงการ)</div>
+          <div class="pdf-option-desc">รวมทั้งภาพรวมยุทธศาสตร์และรายละเอียดทุกโครงการในฉบับเดียว</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <label style="font-size:13px;font-weight:600;color:var(--text2)">ไตรมาสที่ต้องการรายงาน</label>
+        <select class="pdf-quarter-select" id="pdfQuarterSel">
+          <option value="all">ทุกไตรมาส (ปีงบประมาณ 2569)</option>
+          <option value="1">ไตรมาส 1 (ต.ค.–ธ.ค. 68)</option>
+          <option value="2">ไตรมาส 2 (ม.ค.–มี.ค. 69)</option>
+          <option value="3">ไตรมาส 3 (เม.ย.–มิ.ย. 69)</option>
+          <option value="4">ไตรมาส 4 (ก.ค.–ก.ย. 69)</option>
+        </select>
+
+        <div style="margin-top:10px">
+          <label style="font-size:13px;font-weight:600;color:var(--text2)">ยุทธศาสตร์ (สำหรับรายงานรายโครงการ)</label>
+          <select class="pdf-quarter-select" id="pdfStrategySel" style="margin-top:6px">
+            <option value="all">ทุกยุทธศาสตร์</option>
+            <option value="1">ยุทธศาสตร์ที่ 1 – การพัฒนาการจัดการศึกษาทางไกล</option>
+            <option value="2">ยุทธศาสตร์ที่ 2 – การพัฒนาครูและโรงเรียนต้นทาง</option>
+            <option value="3">ยุทธศาสตร์ที่ 3 – การพัฒนาครูและโรงเรียนปลายทาง</option>
+            <option value="4">ยุทธศาสตร์ที่ 4 – การพัฒนาระบบการบริหารจัดการ</option>
+            <option value="5">งบบริหารสำนักงาน</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pdf-progress" id="pdfProgress">
+        <div id="pdfProgressText">⏳ กำลังสร้างรายงาน PDF...</div>
+        <div class="pdf-progress-bar-track">
+          <div class="pdf-progress-bar-fill" id="pdfProgressBar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pdf-modal-footer">
+      <button class="pdf-cancel-btn" onclick="closePdfModal()">ยกเลิก</button>
+      <button class="pdf-gen-btn" id="pdfGenBtn" onclick="generatePDF()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        สร้าง PDF
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Save Success Popup -->
 <div class="save-popup-overlay" id="savePopupOverlay">
@@ -3809,6 +3990,500 @@ function exportCSV(){
   a.click();
   document.getElementById('gsStatus').innerHTML='<div class="status-msg status-ok">✅ ดาวน์โหลด CSV สำเร็จ (รูปภาพถูกส่งใน JSON แยกต่างหาก)</div>';
 }
+
+// ===== PDF EXPORT =====
+let _pdfOptSelected = 1;
+
+function openPdfModal() {
+  document.getElementById('pdfQuarterSel').value = currentQuarter;
+  document.getElementById('pdfModalOverlay').classList.add('open');
+  document.getElementById('pdfProgress').classList.remove('show');
+  const btn = document.getElementById('pdfGenBtn');
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> สร้าง PDF';
+}
+function closePdfModal() {
+  document.getElementById('pdfModalOverlay').classList.remove('open');
+}
+function selectPdfOpt(n) {
+  _pdfOptSelected = n;
+  [1,2,3].forEach(i => document.getElementById('pdfOpt'+i).classList.toggle('selected', i===n));
+}
+function _pdfProgress(txt, pct) {
+  document.getElementById('pdfProgressText').textContent = txt;
+  document.getElementById('pdfProgressBar').style.width = pct+'%';
+}
+
+/* ─── helpers ─── */
+function _fmtB(n){ n=n||0; if(n>=1000000) return (n/1000000).toFixed(2)+'M'; if(n>=1000) return (n/1000).toFixed(0)+'K'; return n.toLocaleString('th-TH'); }
+function _fmtFull(n){ return (n||0).toLocaleString('th-TH'); }
+
+const _S_NAMES = {1:'ยุทธศาสตร์ที่ 1',2:'ยุทธศาสตร์ที่ 2',3:'ยุทธศาสตร์ที่ 3',4:'ยุทธศาสตร์ที่ 4',5:'งบบริหารสำนักงาน'};
+const _S_FULL  = {1:'การพัฒนาการจัดการศึกษาทางไกล',2:'การพัฒนาครูและโรงเรียนต้นทาง',3:'การพัฒนาครูและโรงเรียนปลายทาง',4:'การพัฒนาระบบการบริหารจัดการ',5:'งบดำเนินการสำนักงาน'};
+const _S_COLOR = {1:'#3b72f0',2:'#059669',3:'#d97706',4:'#9333ea',5:'#0891b2'};
+const _S_LIGHT = {1:'#eef2fd',2:'#ecfdf5',3:'#fffbeb',4:'#faf5ff',5:'#ecfeff'};
+const _STATUS_TH = {done:'แล้วเสร็จ',progress:'กำลังดำเนิน',pending:'ยังไม่เริ่ม'};
+const _STATUS_COLOR = {done:'#059669',progress:'#3b72f0',pending:'#9aa3b2'};
+const _STATUS_BG    = {done:'#ecfdf5',progress:'#eef2fd',pending:'#f3f4f6'};
+const _Q_LABELS = {all:'ทุกไตรมาส','1':'ไตรมาส 1 (ต.ค.–ธ.ค. 68)','2':'ไตรมาส 2 (ม.ค.–มี.ค. 69)','3':'ไตรมาส 3 (เม.ย.–มิ.ย. 69)','4':'ไตรมาส 4 (ก.ค.–ก.ย. 69)'};
+
+/* ─── Build HTML for a single PDF "page" (A4 width 794px) ─── */
+function _buildOverviewHTML(fp, qLabel) {
+  const totalB = fp.reduce((a,p)=>a+(p.budget||0),0);
+  const totalS = fp.reduce((a,p)=>a+(p.spent||0),0);
+  const totalPO= fp.reduce((a,p)=>a+(p.po||0),0);
+  const totalR = totalB-totalS-totalPO;
+  const done   = fp.filter(p=>p.status==='done').length;
+  const prog   = fp.filter(p=>p.status==='progress').length;
+  const pend   = fp.filter(p=>p.status==='pending').length;
+  const spentPct = totalB>0?((totalS/totalB)*100).toFixed(1):0;
+  const planPct  = totalB>0?(((totalS+totalPO)/totalB)*100).toFixed(1):0;
+  const remPct   = totalB>0?(((totalR<0?0:totalR)/totalB)*100).toFixed(1):100;
+
+  const stratRows = [1,2,3,4,5].map(s=>{
+    const ps    = fp.filter(p=>p.strategy==s);
+    const b     = ps.reduce((a,p)=>a+(p.budget||0),0);
+    const spent = ps.reduce((a,p)=>a+(p.spent||0),0);
+    const po    = ps.reduce((a,p)=>a+(p.po||0),0);
+    const rem   = b-spent-po;
+    const pct   = b>0?Math.round((spent+po)/b*100):0;
+    const sd    = ps.filter(p=>p.status==='done').length;
+    const sp    = ps.filter(p=>p.status==='progress').length;
+    const spe   = ps.filter(p=>p.status==='pending').length;
+    const barColor = pct>=90?'#dc2626':pct>=70?'#d97706':_S_COLOR[s];
+    return `
+    <tr style="border-bottom:1px solid #e4e7ed">
+      <td style="padding:10px 12px">
+        <span style="display:inline-block;background:${_S_COLOR[s]};color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;margin-bottom:3px">${_S_NAMES[s]}</span><br>
+        <span style="font-size:12px;color:#5a6477">${_S_FULL[s]}</span><br>
+        <span style="font-size:11px;color:#9aa3b2">${ps.length} โครงการ</span>
+        <div style="margin-top:5px;height:5px;background:#e4e7ed;border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(pct,100)}%;background:${barColor};border-radius:99px"></div>
+        </div>
+      </td>
+      <td style="padding:10px 12px;text-align:center;font-weight:700;font-size:14px;color:${barColor}">${pct}%</td>
+      <td style="padding:10px 12px;text-align:right;font-size:13px">${_fmtFull(b)}</td>
+      <td style="padding:10px 12px;text-align:right;font-size:13px;color:#d97706">${_fmtFull(spent)}</td>
+      <td style="padding:10px 12px;text-align:right;font-size:13px;color:#9333ea">${_fmtFull(po)}</td>
+      <td style="padding:10px 12px;text-align:right;font-size:13px;color:${rem<0?'#dc2626':'#059669'};font-weight:600">${_fmtFull(rem)}</td>
+      <td style="padding:10px 12px;text-align:center">
+        <div style="font-size:11px;display:flex;flex-direction:column;gap:2px">
+          <span style="color:#059669;font-weight:600">✅ ${sd} แล้วเสร็จ</span>
+          <span style="color:#3b72f0;font-weight:600">⏳ ${sp} กำลังดำเนิน</span>
+          <span style="color:#9aa3b2;font-weight:600">⭕ ${spe} ยังไม่เริ่ม</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  return `
+  <div style="font-family:'Sarabun',sans-serif;width:794px;background:#f4f6f9;padding:0;color:#1c2333;line-height:1.6">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#086858 0%,#1645e0 55%,#118c91 100%);padding:20px 28px 16px;color:#fff">
+      <div style="font-size:12px;opacity:.8;margin-bottom:4px">มูลนิธิการศึกษาทางไกลผ่านดาวเทียม ในพระบรมราชูปถัมภ์</div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:2px">รายงานสรุปผลการดำเนินงานในภาพรวมยุทธศาสตร์</div>
+      <div style="font-size:13px;opacity:.9">ปีงบประมาณ พ.ศ. 2569 · ${qLabel}</div>
+    </div>
+
+    <div style="padding:20px 28px">
+
+      <!-- KPI Cards Row 1 -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">
+        ${_metricCard('#eef2fd','#3b72f0','โครงการทั้งหมด',fp.length+' โครงการ','5 ยุทธศาสตร์')}
+        ${_metricCard('#ecfdf5','#059669','งบประมาณรวม',_fmtFull(totalB)+' บาท','ที่ได้รับอนุมัติ')}
+        ${_metricCard('#fffbeb','#d97706','ใช้จ่ายแล้ว',_fmtFull(totalS)+' บาท',spentPct+'% ของงบรวม')}
+        ${_metricCard(totalR<0?'#fff0f0':'#f0fdf4',totalR<0?'#dc2626':'#059669','คงเหลือสุทธิ',_fmtFull(totalR)+' บาท',remPct+'% ของงบรวม')}
+      </div>
+
+      <!-- KPI Cards Row 2 -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
+        ${_metricCard('#ecfdf5','#059669','✅ แล้วเสร็จ',done+' โครงการ',Math.round(done/fp.length*100)+'% ของโครงการทั้งหมด')}
+        ${_metricCard('#eef2fd','#3b72f0','⏳ กำลังดำเนิน',prog+' โครงการ',Math.round(prog/fp.length*100)+'% ของโครงการทั้งหมด')}
+        ${_metricCard('#f9fafb','#9aa3b2','⭕ ยังไม่เริ่ม',pend+' โครงการ',Math.round(pend/fp.length*100)+'% ของโครงการทั้งหมด')}
+      </div>
+
+      <!-- Budget Progress Bar -->
+      <div style="background:#fff;border:1px solid #e4e7ed;border-radius:12px;padding:16px 20px;margin-bottom:18px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:#1c2333">📊 ภาพรวมการใช้จ่ายงบประมาณรวมทุกยุทธศาสตร์</div>
+        <div style="height:16px;border-radius:99px;overflow:hidden;background:#e4e7ed;display:flex;margin-bottom:10px">
+          <div style="width:${spentPct}%;background:linear-gradient(90deg,#059669,#34c179);min-width:${Number(spentPct)>0?2:0}px"></div>
+          <div style="width:${planPct}%;background:linear-gradient(90deg,#d97706,#f59e0b);min-width:${Number(planPct)>0?2:0}px"></div>
+          <div style="flex:1;background:#e4e7ed"></div>
+        </div>
+        <div style="display:flex;gap:20px;font-size:12px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:linear-gradient(90deg,#059669,#34c179);display:inline-block"></span>ใช้ไปแล้ว <strong>${_fmtFull(totalS)} บาท</strong> (${spentPct}%)</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:linear-gradient(90deg,#d97706,#f59e0b);display:inline-block"></span>PO ผูกพัน <strong>${_fmtFull(totalPO)} บาท</strong> (${planPct}%)</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:#e4e7ed;border:1px solid #ccc;display:inline-block"></span>คงเหลือ <strong style="color:${totalR<0?'#dc2626':'#059669'}">${_fmtFull(totalR)} บาท</strong> (${remPct}%)</span>
+          <span style="margin-left:auto;font-weight:700;color:#3b72f0">งบรวม: ${_fmtFull(totalB)} บาท</span>
+        </div>
+      </div>
+
+      <!-- Strategy Table -->
+      <div style="background:#fff;border:1px solid #e4e7ed;border-radius:12px;overflow:hidden;margin-bottom:18px">
+        <div style="background:#1c2333;padding:12px 16px;color:#fff;font-size:14px;font-weight:700">ผลการดำเนินงานรายยุทธศาสตร์</div>
+        <table style="width:100%;border-collapse:collapse;font-family:'Sarabun',sans-serif">
+          <thead>
+            <tr style="background:#f8fafc;border-bottom:2px solid #e4e7ed">
+              <th style="padding:10px 12px;text-align:left;font-size:12px;color:#5a6477;font-weight:700">ยุทธศาสตร์</th>
+              <th style="padding:10px 12px;text-align:center;font-size:12px;color:#5a6477;font-weight:700">ใช้+PO</th>
+              <th style="padding:10px 12px;text-align:right;font-size:12px;color:#5a6477;font-weight:700">งบอนุมัติ (บาท)</th>
+              <th style="padding:10px 12px;text-align:right;font-size:12px;color:#5a6477;font-weight:700">ใช้จ่ายแล้ว</th>
+              <th style="padding:10px 12px;text-align:right;font-size:12px;color:#5a6477;font-weight:700">PO ผูกพัน</th>
+              <th style="padding:10px 12px;text-align:right;font-size:12px;color:#5a6477;font-weight:700">คงเหลือ</th>
+              <th style="padding:10px 12px;text-align:center;font-size:12px;color:#5a6477;font-weight:700">สถานะโครงการ</th>
+            </tr>
+          </thead>
+          <tbody>${stratRows}</tbody>
+          <tfoot>
+            <tr style="background:#eef2fd;border-top:2px solid #3b72f0">
+              <td style="padding:10px 12px;font-weight:700;font-size:13px;color:#1c2333">รวมทั้งหมด (${fp.length} โครงการ)</td>
+              <td style="padding:10px 12px;text-align:center;font-weight:700;font-size:13px;color:#3b72f0">${planPct}%</td>
+              <td style="padding:10px 12px;text-align:right;font-weight:700;font-size:13px">${_fmtFull(totalB)}</td>
+              <td style="padding:10px 12px;text-align:right;font-weight:700;font-size:13px;color:#d97706">${_fmtFull(totalS)}</td>
+              <td style="padding:10px 12px;text-align:right;font-weight:700;font-size:13px;color:#9333ea">${_fmtFull(totalPO)}</td>
+              <td style="padding:10px 12px;text-align:right;font-weight:700;font-size:13px;color:${totalR<0?'#dc2626':'#059669'}">${_fmtFull(totalR)}</td>
+              <td style="padding:10px 12px;text-align:center">
+                <div style="font-size:11px;display:flex;flex-direction:column;gap:2px">
+                  <span style="color:#059669;font-weight:600">✅ ${done} แล้วเสร็จ</span>
+                  <span style="color:#3b72f0;font-weight:600">⏳ ${prog} กำลังดำเนิน</span>
+                  <span style="color:#9aa3b2;font-weight:600">⭕ ${pend} ยังไม่เริ่ม</span>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#1c2333;color:rgba(255,255,255,.6);font-size:11px;padding:8px 28px;display:flex;justify-content:space-between">
+      <span>ระบบรายงานผลการดำเนินงาน ปีงบประมาณ พ.ศ. 2569 | มูลนิธิการศึกษาทางไกลผ่านดาวเทียม</span>
+      <span>พิมพ์: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</span>
+    </div>
+  </div>`;
+}
+
+function _metricCard(bg, color, label, value, sub) {
+  return `<div style="background:${bg};border:1px solid ${color}33;border-radius:10px;padding:14px 16px;border-left:4px solid ${color}">
+    <div style="font-size:11px;color:#9aa3b2;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${label}</div>
+    <div style="font-size:20px;font-weight:700;color:${color};line-height:1.1;margin-bottom:3px">${value}</div>
+    <div style="font-size:11px;color:#5a6477">${sub}</div>
+  </div>`;
+}
+
+function _buildProjectsHTML(fp, qLabel, strategyFilter) {
+  let filtered = strategyFilter==='all' ? fp : fp.filter(p=>p.strategy==strategyFilter);
+  const strategies = strategyFilter==='all' ? [1,2,3,4,5] : [parseInt(strategyFilter)];
+
+  let html = `
+  <div style="font-family:'Sarabun',sans-serif;width:794px;background:#f4f6f9;padding:0;color:#1c2333;line-height:1.6">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#086858 0%,#1645e0 55%,#118c91 100%);padding:20px 28px 16px;color:#fff">
+      <div style="font-size:12px;opacity:.8;margin-bottom:4px">มูลนิธิการศึกษาทางไกลผ่านดาวเทียม ในพระบรมราชูปถัมภ์</div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:2px">รายงานสรุปผลการดำเนินงานรายโครงการ</div>
+      <div style="font-size:13px;opacity:.9">ปีงบประมาณ พ.ศ. 2569 · ${qLabel}</div>
+    </div>
+
+    <div style="padding:20px 28px">`;
+
+  for (const s of strategies) {
+    const ps = filtered.filter(p=>p.strategy==s);
+    if (!ps.length) continue;
+    const color = _S_COLOR[s];
+    const light = _S_LIGHT[s];
+    const totalB = ps.reduce((a,p)=>a+(p.budget||0),0);
+    const totalS = ps.reduce((a,p)=>a+(p.spent||0),0);
+    const totalPO= ps.reduce((a,p)=>a+(p.po||0),0);
+    const totalR = totalB-totalS-totalPO;
+    const sdone  = ps.filter(p=>p.status==='done').length;
+    const sprog  = ps.filter(p=>p.status==='progress').length;
+    const spend  = ps.filter(p=>p.status==='pending').length;
+    const pct    = totalB>0?Math.round((totalS+totalPO)/totalB*100):0;
+
+    html += `
+      <!-- Strategy heading -->
+      <div style="margin-bottom:14px">
+        <div style="background:${color};color:#fff;padding:12px 18px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:15px;font-weight:700">${_S_NAMES[s]} · ${_S_FULL[s]}</div>
+            <div style="font-size:12px;opacity:.85;margin-top:2px">${ps.length} โครงการ | งบอนุมัติ ${_fmtFull(totalB)} บาท | ใช้+PO ${pct}%</div>
+          </div>
+          <div style="text-align:right;font-size:11px;opacity:.9">
+            ✅ ${sdone} แล้วเสร็จ · ⏳ ${sprog} กำลังดำเนิน · ⭕ ${spend} ยังไม่เริ่ม
+          </div>
+        </div>`;
+
+    // Projects under this strategy
+    ps.forEach((p, idx) => {
+      const sColor  = _STATUS_COLOR[p.status];
+      const sBg     = _STATUS_BG[p.status];
+      const sIcon   = p.status==='done'?'✅':p.status==='progress'?'⏳':'⭕';
+      const sLabel  = _STATUS_TH[p.status];
+      const b = p.budget||0, spent = p.spent||0, po = p.po||0, rem = b-spent-po;
+      const rowBg = idx%2===0?'#fff':'#fafbfc';
+
+      html += `
+        <div style="background:${rowBg};border-left:4px solid ${color};border-right:1px solid #e4e7ed;border-bottom:1px solid #e4e7ed;padding:14px 18px">
+
+          <!-- Project header -->
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
+            <div style="display:flex;align-items:flex-start;gap:10px;flex:1">
+              <span style="background:${color};color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;flex-shrink:0">${idx+1}</span>
+              <div style="font-size:14px;font-weight:700;color:#1c2333;line-height:1.4">${p.name}</div>
+            </div>
+            <span style="background:${sBg};color:${sColor};font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;white-space:nowrap;flex-shrink:0">${sIcon} ${sLabel}</span>
+          </div>
+
+          <!-- Budget row -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
+            ${_miniMetric('งบอนุมัติ', _fmtFull(b)+' บาท', '#3b72f0')}
+            ${_miniMetric('ใช้จ่ายแล้ว', _fmtFull(spent)+' บาท', '#d97706')}
+            ${_miniMetric('PO ผูกพัน', _fmtFull(po)+' บาท', '#9333ea')}
+            ${_miniMetric('คงเหลือ', _fmtFull(rem)+' บาท', rem<0?'#dc2626':'#059669')}
+          </div>
+
+          ${p.result && p.result.trim() ? `
+          <!-- Result -->
+          <div style="margin-bottom:8px">
+            <div style="background:#eef2fd;color:#3b72f0;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;margin-bottom:5px">📝 ผลการดำเนินงาน</div>
+            <div style="font-size:13px;color:#374151;line-height:1.7;padding:0 4px;white-space:pre-wrap">${p.result.trim()}</div>
+          </div>` : ''}
+
+          ${p.kpi && p.kpi.length ? `
+          <!-- KPIs -->
+          <div style="margin-bottom:8px">
+            <div style="background:#ecfdf5;color:#059669;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;margin-bottom:5px">🎯 ตัวชี้วัด (KPI)</div>
+            <div style="padding:0 4px">${p.kpi.map(k=>`<div style="display:flex;align-items:flex-start;gap:7px;font-size:13px;color:#374151;margin-bottom:3px"><span style="width:6px;height:6px;border-radius:50%;background:#059669;flex-shrink:0;margin-top:5px;display:inline-block"></span>${k}</div>`).join('')}</div>
+          </div>` : ''}
+
+          ${p.problems && p.problems.trim() ? `
+          <!-- Problems -->
+          <div style="margin-bottom:8px">
+            <div style="background:#fff0f0;color:#dc2626;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;margin-bottom:5px">⚠️ ปัญหาและอุปสรรค</div>
+            <div style="font-size:13px;color:#374151;line-height:1.7;padding:0 4px;white-space:pre-wrap">${p.problems.trim()}</div>
+          </div>` : ''}
+
+          ${p.solutions && p.solutions.trim() ? `
+          <!-- Solutions -->
+          <div>
+            <div style="background:#ecfdf5;color:#059669;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;margin-bottom:5px">✅ แนวทางแก้ไข</div>
+            <div style="font-size:13px;color:#374151;line-height:1.7;padding:0 4px;white-space:pre-wrap">${p.solutions.trim()}</div>
+          </div>` : ''}
+
+        </div>`;
+    });
+
+    // Strategy footer summary
+    html += `
+        <div style="background:${light};border-left:4px solid ${color};border-right:1px solid #e4e7ed;border-bottom:1px solid #e4e7ed;padding:10px 18px;display:flex;gap:20px;font-size:12px;font-weight:600;border-radius:0 0 10px 10px">
+          <span>📊 สรุปยุทธศาสตร์ · ${ps.length} โครงการ</span>
+          <span>งบรวม: <strong>${_fmtFull(totalB)}</strong> บาท</span>
+          <span style="color:#d97706">ใช้: <strong>${_fmtFull(totalS)}</strong> บาท</span>
+          <span style="color:#9333ea">PO: <strong>${_fmtFull(totalPO)}</strong> บาท</span>
+          <span style="color:${totalR<0?'#dc2626':'#059669'}">คงเหลือ: <strong>${_fmtFull(totalR)}</strong> บาท</span>
+          <span style="color:${color}">ใช้+PO: <strong>${pct}%</strong></span>
+        </div>
+      </div>
+      <div style="height:16px"></div>`;
+  }
+
+  html += `
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#1c2333;color:rgba(255,255,255,.6);font-size:11px;padding:8px 28px;display:flex;justify-content:space-between">
+      <span>ระบบรายงานผลการดำเนินงาน ปีงบประมาณ พ.ศ. 2569 | มูลนิธิการศึกษาทางไกลผ่านดาวเทียม</span>
+      <span>พิมพ์: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</span>
+    </div>
+  </div>`;
+  return html;
+}
+
+function _miniMetric(label, value, color) {
+  return `<div style="background:#f8fafc;border:1px solid #e4e7ed;border-radius:8px;padding:8px 10px;border-top:3px solid ${color}">
+    <div style="font-size:10px;color:#9aa3b2;margin-bottom:2px">${label}</div>
+    <div style="font-size:12px;font-weight:700;color:${color}">${value}</div>
+  </div>`;
+}
+
+/* ─── Render an HTML string off-screen → canvas → add to jsPDF ─── */
+async function _htmlToCanvas(htmlStr) {
+  // Load Sarabun font first (wait for it)
+  await document.fonts.ready;
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;background:#f4f6f9';
+  wrap.innerHTML = htmlStr;
+  document.body.appendChild(wrap);
+
+  // Give browser a tick to render
+  await new Promise(r => setTimeout(r, 80));
+
+  const canvas = await html2canvas(wrap, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#f4f6f9',
+    width: 794,
+    windowWidth: 794,
+    logging: false
+  });
+  document.body.removeChild(wrap);
+  return canvas;
+}
+
+/* ─── Slice a tall canvas into A4-height chunks and add as jsPDF pages ─── */
+async function _canvasToPdfPages(doc, canvas, isFirstPage) {
+  const { jsPDF } = window.jspdf;
+  const PAGE_W_PX = canvas.width;        // 794*2 = 1588px at scale 2
+  const PAGE_H_PX = Math.round(PAGE_W_PX * (297/210)); // A4 ratio
+  const totalH = canvas.height;
+  let offsetY = 0;
+  let firstSlice = true;
+
+  while (offsetY < totalH) {
+    const sliceH = Math.min(PAGE_H_PX, totalH - offsetY);
+    const slice = document.createElement('canvas');
+    slice.width = PAGE_W_PX;
+    slice.height = PAGE_H_PX;
+    const ctx = slice.getContext('2d');
+    ctx.fillStyle = '#f4f6f9';
+    ctx.fillRect(0,0,PAGE_W_PX,PAGE_H_PX);
+    ctx.drawImage(canvas, 0, offsetY, PAGE_W_PX, sliceH, 0, 0, PAGE_W_PX, sliceH);
+
+    const imgData = slice.toDataURL('image/jpeg', 0.92);
+
+    if (!isFirstPage || !firstSlice) {
+      doc.addPage('a4','portrait');
+    }
+    doc.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+    firstSlice = false;
+    isFirstPage = false;
+    offsetY += PAGE_H_PX;
+  }
+}
+
+/* ─── PDF via Puppeteer server (localhost:3456) ─── */
+const _PDF_SERVER = 'http://localhost:3456/pdf';
+
+function _wrapFullHTML(bodyHTML, title) {
+  return `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    font-size: 15px;
+    background: #f4f6f9;
+    color: #1c2333;
+    line-height: 1.65;
+    width: 794px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  @media print {
+    body { width: 794px; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  }
+</style>
+</head>
+<body>${bodyHTML}</body>
+</html>`;
+}
+
+async function generatePDF() {
+  const btn = document.getElementById('pdfGenBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังสร้าง...';
+  document.getElementById('pdfProgress').classList.add('show');
+
+  const qSel   = document.getElementById('pdfQuarterSel').value;
+  const sSel   = document.getElementById('pdfStrategySel').value;
+  const qLabel = _Q_LABELS[qSel];
+  const fp     = qSel==='all' ? [...projects] : projects.filter(p=>p.quarter===qSel||p.quarter==='all');
+
+  const typeLabel = _pdfOptSelected===1?'ภาพรวมยุทธศาสตร์':_pdfOptSelected===2?'รายโครงการ':'ฉบับสมบูรณ์';
+  const safeName  = qLabel.replace(/[()\–·\s]+/g,'_');
+  const fileName  = `รายงานผลการดำเนินงาน_${typeLabel}_${safeName}_2569.pdf`;
+
+  try {
+    // ── ตรวจสอบว่า server พร้อมหรือยัง ──
+    _pdfProgress('🔍 ตรวจสอบ PDF Server...', 5);
+    let serverOK = false;
+    try {
+      const ping = await fetch(_PDF_SERVER, { method:'OPTIONS', signal: AbortSignal.timeout(3000) });
+      serverOK = ping.ok || ping.status === 204;
+    } catch(_) { serverOK = false; }
+
+    if (!serverOK) {
+      _pdfProgress('❌ ไม่พบ PDF Server', 0);
+      document.getElementById('pdfProgressText').innerHTML =
+        '❌ กรุณาเปิด <code>pdf-server.js</code> ก่อน:<br>' +
+        '<code style="font-size:12px;background:#f3f4f6;padding:4px 8px;border-radius:4px;display:inline-block;margin-top:4px">' +
+        'node pdf-server.js</code>';
+      btn.disabled = false;
+      btn.innerHTML = '🔄 ลองใหม่';
+      return;
+    }
+
+    // ── สร้าง HTML ──
+    let bodyHTML = '';
+    if (_pdfOptSelected === 1 || _pdfOptSelected === 3) {
+      _pdfProgress('📊 กำลังสร้างหน้าสรุปภาพรวม...', 20);
+      bodyHTML += _buildOverviewHTML(fp, qLabel);
+    }
+    if (_pdfOptSelected === 2 || _pdfOptSelected === 3) {
+      _pdfProgress('📋 กำลังสร้างหน้ารายโครงการ...', 40);
+      bodyHTML += _buildProjectsHTML(fp, qLabel, sSel);
+    }
+
+    const fullHTML = _wrapFullHTML(bodyHTML, fileName);
+
+    // ── ส่งไปให้ Puppeteer server ──
+    _pdfProgress('🖨️ กำลัง render PDF ด้วย Chrome...', 60);
+    const resp = await fetch(_PDF_SERVER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html: fullHTML, filename: fileName }),
+      signal: AbortSignal.timeout(60000)
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: resp.statusText }));
+      throw new Error(err.error || resp.statusText);
+    }
+
+    _pdfProgress('💾 กำลังดาวน์โหลด...', 90);
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = fileName; a.click();
+    URL.revokeObjectURL(url);
+
+    _pdfProgress('✅ Export PDF สำเร็จ!', 100);
+    setTimeout(() => {
+      closePdfModal();
+      showToast('✅ Export PDF สำเร็จ · ' + fileName, 3500);
+    }, 700);
+
+  } catch(err) {
+    console.error('PDF Error:', err);
+    _pdfProgress('❌ เกิดข้อผิดพลาด: ' + err.message, 0);
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ลองใหม่';
+  }
+}
+
+// Close PDF modal on backdrop click
+document.getElementById('pdfModalOverlay').addEventListener('click', e=>{ if(e.target===e.currentTarget) closePdfModal(); });
 
 // ===== KEYBOARD =====
 document.addEventListener('keydown',e=>{
