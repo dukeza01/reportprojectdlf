@@ -4399,6 +4399,21 @@ function _wrapFullHTML(bodyHTML, title) {
 </html>`;
 }
 
+/* ─── Client-side PDF fallback (jsPDF + html2canvas) ─── */
+async function _generatePDFClientSide(bodyHTML, fileName) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  _pdfProgress('🖼️ กำลัง render หน้าเอกสาร...', 30);
+  const canvas = await _htmlToCanvas(bodyHTML);
+
+  _pdfProgress('📄 กำลังแบ่งหน้า PDF...', 60);
+  await _canvasToPdfPages(doc, canvas, true);
+
+  _pdfProgress('💾 กำลังดาวน์โหลด...', 90);
+  doc.save(fileName);
+}
+
 async function generatePDF() {
   const btn = document.getElementById('pdfGenBtn');
   btn.disabled = true;
@@ -4415,58 +4430,53 @@ async function generatePDF() {
   const fileName  = `รายงานผลการดำเนินงาน_${typeLabel}_${safeName}_2569.pdf`;
 
   try {
-    // ── ตรวจสอบว่า server พร้อมหรือยัง ──
-    _pdfProgress('🔍 ตรวจสอบ PDF Server...', 5);
+    // ── สร้าง HTML ──
+    let bodyHTML = '';
+    if (_pdfOptSelected === 1 || _pdfOptSelected === 3) {
+      _pdfProgress('📊 กำลังสร้างหน้าสรุปภาพรวม...', 10);
+      bodyHTML += _buildOverviewHTML(fp, qLabel);
+    }
+    if (_pdfOptSelected === 2 || _pdfOptSelected === 3) {
+      _pdfProgress('📋 กำลังสร้างหน้ารายโครงการ...', 20);
+      bodyHTML += _buildProjectsHTML(fp, qLabel, sSel);
+    }
+
+    // ── ตรวจสอบว่า Puppeteer server พร้อมหรือยัง ──
+    _pdfProgress('🔍 ตรวจสอบ PDF Server...', 25);
     let serverOK = false;
     try {
       const ping = await fetch(_PDF_SERVER, { method:'OPTIONS', signal: AbortSignal.timeout(3000) });
       serverOK = ping.ok || ping.status === 204;
     } catch(_) { serverOK = false; }
 
-    if (!serverOK) {
-      _pdfProgress('❌ ไม่พบ PDF Server', 0);
-      document.getElementById('pdfProgressText').innerHTML =
-        '❌ กรุณาเปิด <code>pdf-server.js</code> ก่อน:<br>' +
-        '<code style="font-size:12px;background:#f3f4f6;padding:4px 8px;border-radius:4px;display:inline-block;margin-top:4px">' +
-        'node pdf-server.js</code>';
-      btn.disabled = false;
-      btn.innerHTML = '🔄 ลองใหม่';
-      return;
+    if (serverOK) {
+      // ── วิธีที่ 1: Puppeteer server (คุณภาพสูง) ──
+      const fullHTML = _wrapFullHTML(bodyHTML, fileName);
+      _pdfProgress('🖨️ กำลัง render PDF ด้วย Chrome...', 60);
+      const resp = await fetch(_PDF_SERVER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: fullHTML, filename: fileName }),
+        signal: AbortSignal.timeout(60000)
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: resp.statusText }));
+        throw new Error(err.error || resp.statusText);
+      }
+
+      _pdfProgress('💾 กำลังดาวน์โหลด...', 90);
+      const blob = await resp.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = fileName; a.click();
+      URL.revokeObjectURL(url);
+
+    } else {
+      // ── วิธีที่ 2: Client-side fallback (jsPDF + html2canvas) ──
+      _pdfProgress('💡 ไม่พบ PDF Server — ใช้ระบบสำรองในเบราว์เซอร์...', 28);
+      await _generatePDFClientSide(bodyHTML, fileName);
     }
-
-    // ── สร้าง HTML ──
-    let bodyHTML = '';
-    if (_pdfOptSelected === 1 || _pdfOptSelected === 3) {
-      _pdfProgress('📊 กำลังสร้างหน้าสรุปภาพรวม...', 20);
-      bodyHTML += _buildOverviewHTML(fp, qLabel);
-    }
-    if (_pdfOptSelected === 2 || _pdfOptSelected === 3) {
-      _pdfProgress('📋 กำลังสร้างหน้ารายโครงการ...', 40);
-      bodyHTML += _buildProjectsHTML(fp, qLabel, sSel);
-    }
-
-    const fullHTML = _wrapFullHTML(bodyHTML, fileName);
-
-    // ── ส่งไปให้ Puppeteer server ──
-    _pdfProgress('🖨️ กำลัง render PDF ด้วย Chrome...', 60);
-    const resp = await fetch(_PDF_SERVER, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html: fullHTML, filename: fileName }),
-      signal: AbortSignal.timeout(60000)
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ error: resp.statusText }));
-      throw new Error(err.error || resp.statusText);
-    }
-
-    _pdfProgress('💾 กำลังดาวน์โหลด...', 90);
-    const blob = await resp.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = fileName; a.click();
-    URL.revokeObjectURL(url);
 
     _pdfProgress('✅ Export PDF สำเร็จ!', 100);
     setTimeout(() => {
