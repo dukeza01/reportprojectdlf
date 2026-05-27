@@ -829,6 +829,122 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
   table { font-size: 10px; }
 }
 
+/* ── Auth Modal ── */
+.auth-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,15,30,.7);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  align-items: center; justify-content: center; padding: 1rem;
+}
+.auth-overlay.open { display: flex; }
+.auth-box {
+  background: var(--surface);
+  border-radius: 18px;
+  box-shadow: 0 8px 48px rgba(0,0,0,.22);
+  width: min(440px, 100%);
+  padding: 2rem 2.25rem 1.75rem;
+  animation: modalIn .25s ease;
+}
+.auth-logo { text-align: center; margin-bottom: 1.25rem; }
+.auth-logo-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: linear-gradient(135deg, #086858, #1645e0);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 26px; margin-bottom: .625rem;
+  box-shadow: 0 4px 16px rgba(22,69,224,.35);
+}
+.auth-logo-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.auth-logo-sub   { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.auth-tabs {
+  display: flex; gap: 0; background: var(--surface2);
+  border-radius: var(--radius); padding: 3px;
+  margin-bottom: 1.25rem;
+}
+.auth-tab {
+  flex: 1; padding: 7px; border: none; background: none;
+  font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 600;
+  border-radius: 7px; cursor: pointer; color: var(--text2); transition: all .15s;
+}
+.auth-tab.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+.auth-form { display: flex; flex-direction: column; gap: 12px; }
+.auth-field { display: flex; flex-direction: column; gap: 5px; }
+.auth-label { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
+.auth-input {
+  padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius);
+  font-size: 15px; font-family: 'Sarabun', sans-serif;
+  background: var(--surface2); color: var(--text); transition: border-color .15s;
+}
+.auth-input:focus { outline: none; border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px rgba(59,114,240,.1); }
+.auth-error { font-size: 13px; color: var(--red); background: var(--red-light); border: 1px solid #fca5a5; border-radius: var(--radius); padding: 8px 12px; display: none; }
+.auth-error.show { display: block; }
+.auth-btn {
+  padding: 11px; border: none; border-radius: var(--radius);
+  font-family: 'Sarabun', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all .15s; margin-top: 4px;
+  background: linear-gradient(135deg, #1645e0, #3b72f0);
+  color: #fff; box-shadow: 0 2px 12px rgba(59,114,240,.35);
+}
+.auth-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 18px rgba(59,114,240,.45); }
+.auth-btn:disabled { opacity: .6; cursor: default; transform: none; }
+.auth-guest-btn {
+  padding: 9px; border: 1.5px solid var(--border); border-radius: var(--radius);
+  font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; background: var(--surface); color: var(--text2); transition: all .15s; text-align: center;
+}
+.auth-guest-btn:hover { border-color: var(--text2); color: var(--text); background: var(--surface2); }
+.auth-divider { display: flex; align-items: center; gap: 10px; color: var(--text3); font-size: 12px; }
+.auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.auth-forgot-link {
+  text-align: right; font-size: 12px; color: var(--accent);
+  cursor: pointer; text-decoration: underline; margin-top: -4px;
+  background: none; border: none; font-family: 'Sarabun', sans-serif;
+  align-self: flex-end; padding: 0; transition: color .15s;
+}
+.auth-forgot-link:hover { color: #1645e0; }
+.auth-success { font-size: 13px; color: var(--green); background: var(--green-light); border: 1px solid #86d9b0; border-radius: var(--radius); padding: 8px 12px; display: none; }
+.auth-success.show { display: block; }
+.user-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 99px; padding: 4px 12px 4px 6px;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  transition: all .15s; color: var(--text); position: relative;
+}
+.user-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.user-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, #1645e0, #059669);
+  color: #fff; font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.user-menu {
+  display: none; position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  min-width: 180px; z-index: 500; overflow: hidden;
+}
+.user-menu.open { display: block; }
+.user-menu-header { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.user-menu-name { font-size: 14px; font-weight: 700; }
+.user-menu-email { font-size: 12px; color: var(--text3); margin-top: 1px; }
+.user-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px; font-size: 14px; cursor: pointer;
+  transition: background .12s; color: var(--text);
+  border: none; background: none; width: 100%; text-align: left;
+  font-family: 'Sarabun', sans-serif;
+}
+.user-menu-item:hover { background: var(--surface2); }
+.user-menu-item.danger { color: var(--red); }
+.user-menu-item.danger:hover { background: var(--red-light); }
+.readonly-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #fff8e6; border: 1.5px solid #f6cc70; color: #92400e;
+  border-radius: 99px; padding: 4px 12px;
+  font-size: 12px; font-weight: 700;
+}
+
 @media (max-width: 900px) {
   .sidebar { width: 180px; }
   .main { margin-left: 180px; }
@@ -1171,9 +1287,35 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           นำเข้า/ส่งออก
         </button>
-        <button class="btn btn-sm btn-primary" onclick="openAdd()">
+        <!-- Auth: แสดงปุ่มเพิ่มเฉพาะสมาชิก -->
+        <button class="btn btn-sm btn-primary" id="topbarAddBtn" onclick="openAdd()" style="display:none">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           เพิ่มโครงการ
+        </button>
+        <span class="readonly-badge" id="readonlyBadge" style="display:none">
+          🔒 โหมดดูอย่างเดียว
+        </span>
+        <!-- User pill (แสดงหลัง login) -->
+        <div style="position:relative" id="userPillWrap" style="display:none">
+          <button class="user-pill" id="userPillBtn" onclick="toggleUserMenu()">
+            <span class="user-avatar" id="userAvatar">?</span>
+            <span id="userPillName">ผู้ใช้</span>
+          </button>
+          <div class="user-menu" id="userMenu">
+            <div class="user-menu-header">
+              <div class="user-menu-name" id="menuDisplayName">—</div>
+              <div class="user-menu-email" id="menuEmail">—</div>
+            </div>
+            <button class="user-menu-item danger" onclick="authLogout()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              ออกจากระบบ
+            </button>
+          </div>
+        </div>
+        <!-- Login button (แสดงก่อน login) -->
+        <button class="btn btn-sm btn-primary" id="loginBtn" onclick="openAuthModal('login')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          เข้าสู่ระบบ
         </button>
       </div>
     </div>
@@ -1423,7 +1565,7 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
               <option value="3">ไตรมาส 3 (เม.ย.–มิ.ย.)</option>
               <option value="4">ไตรมาส 4 (ก.ค.–ก.ย.)</option>
             </select>
-            <button class="btn btn-sm btn-primary" onclick="openAdd()">+ เพิ่มโครงการ</button>
+            <button class="btn btn-sm btn-primary" id="tableAddBtn" onclick="openAdd()" style="display:none">+ เพิ่มโครงการ</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -1627,6 +1769,114 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
 
 <!-- Mobile sidebar backdrop -->
 <div id="sidebarBackdrop" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:49"></div>
+
+<!-- ===== AUTH MODAL ===== -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">📡</div>
+      <div class="auth-logo-title">ระบบรายงานผลการดำเนินงาน</div>
+      <div class="auth-logo-sub">มูลนิธิการศึกษาทางไกลผ่านดาวเทียม · ปีงบประมาณ พ.ศ. 2569</div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">เข้าสู่ระบบ</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">สมัครสมาชิก</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="authLoginForm" class="auth-form">
+      <div class="auth-error" id="loginError"></div>
+      <div class="auth-field">
+        <label class="auth-label">อีเมล</label>
+        <input type="email" class="auth-input" id="loginEmail" placeholder="your@email.com" autocomplete="email"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('loginPassword').focus();}">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">รหัสผ่าน</label>
+        <input type="password" class="auth-input" id="loginPassword" placeholder="••••••••" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();authLogin();}">
+      </div>
+      <button class="auth-forgot-link" onclick="switchAuthTab('forgot')" type="button">ลืมรหัสผ่าน?</button>
+      <button class="auth-btn" onclick="authLogin()" id="loginSubmitBtn">เข้าสู่ระบบ</button>
+      <div class="auth-divider">หรือ</div>
+      <button class="auth-guest-btn" onclick="authGuest()">👁 เข้าชมในฐานะผู้เยี่ยมชม (ดูอย่างเดียว)</button>
+    </div>
+
+    <!-- Register Form -->
+    <div id="authRegisterForm" class="auth-form" style="display:none">
+      <div class="auth-error" id="registerError"></div>
+      <div class="auth-field">
+        <label class="auth-label">ชื่อ-นามสกุล <span style="color:var(--red)">*</span></label>
+        <input type="text" class="auth-input" id="regName" placeholder="ชื่อ นามสกุล" autocomplete="name"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('regEmail').focus();}">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">อีเมล <span style="color:var(--red)">*</span></label>
+        <input type="email" class="auth-input" id="regEmail" placeholder="your@email.com" autocomplete="email"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('regPassword').focus();}">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">รหัสผ่าน <span style="color:var(--red)">*</span></label>
+        <input type="password" class="auth-input" id="regPassword" placeholder="อย่างน้อย 6 ตัวอักษร" autocomplete="new-password"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('regConfirm').focus();}">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">ยืนยันรหัสผ่าน <span style="color:var(--red)">*</span></label>
+        <input type="password" class="auth-input" id="regConfirm" placeholder="••••••••" autocomplete="new-password"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();authRegister();}">
+      </div>
+      <button class="auth-btn" onclick="authRegister()" id="registerSubmitBtn">สมัครสมาชิก</button>
+      <div class="auth-divider">หรือ</div>
+      <button class="auth-guest-btn" onclick="authGuest()">👁 เข้าชมในฐานะผู้เยี่ยมชม (ดูอย่างเดียว)</button>
+    </div>
+
+    <!-- Forgot Password Form -->
+    <div id="authForgotForm" class="auth-form" style="display:none">
+
+      <!-- Step 1: กรอกอีเมล -->
+      <div id="forgotStep1">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.6;">
+          กรอกอีเมลที่ลงทะเบียนไว้ ระบบจะสร้าง<strong>รหัสชั่วคราว</strong>ให้<br>
+          <span style="color:var(--text3);font-size:12px;">Admin จะเห็นรหัสชั่วคราวใน Google Sheet เพื่อแจ้งให้คุณ</span>
+        </div>
+        <div class="auth-error" id="forgotError"></div>
+        <div class="auth-field">
+          <label class="auth-label">อีเมล</label>
+          <input type="email" class="auth-input" id="forgotEmail" placeholder="your@email.com" autocomplete="email"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();authRequestReset();}">
+        </div>
+        <button class="auth-btn" onclick="authRequestReset()" id="forgotSubmitBtn">ขอรหัสชั่วคราว</button>
+        <button class="auth-guest-btn" onclick="switchAuthTab('login')" style="margin-top:2px;">← กลับหน้าเข้าสู่ระบบ</button>
+      </div>
+
+      <!-- Step 2: กรอกรหัสชั่วคราว + ตั้ง password ใหม่ -->
+      <div id="forgotStep2" style="display:none">
+        <div id="forgotStep2Banner" style="font-size:13px;background:var(--amber-light);border:1px solid #f6cc70;border-radius:var(--radius);padding:8px 12px;margin-bottom:4px;line-height:1.6;color:#92400e;"></div>
+        <div class="auth-error" id="forgotStep2Error"></div>
+        <div class="auth-success" id="forgotStep2Success"></div>
+        <div class="auth-field">
+          <label class="auth-label">รหัสชั่วคราว (ได้รับจาก Admin)</label>
+          <input type="text" class="auth-input" id="forgotTempPass" placeholder="กรอกรหัสชั่วคราว" autocomplete="off"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('forgotNewPass').focus();}">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">รหัสผ่านใหม่ <span style="color:var(--red)">*</span></label>
+          <input type="password" class="auth-input" id="forgotNewPass" placeholder="อย่างน้อย 6 ตัวอักษร" autocomplete="new-password"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('forgotConfirmPass').focus();}">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">ยืนยันรหัสผ่านใหม่ <span style="color:var(--red)">*</span></label>
+          <input type="password" class="auth-input" id="forgotConfirmPass" placeholder="••••••••" autocomplete="new-password"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();authChangePassword();}">
+        </div>
+        <button class="auth-btn" onclick="authChangePassword()" id="changePassBtn">ตั้งรหัสผ่านใหม่</button>
+        <button class="auth-guest-btn" onclick="authBackToStep1()" style="margin-top:2px;">← ขอรหัสชั่วคราวใหม่</button>
+      </div>
+
+    </div>
+
+  </div><!-- /.auth-box -->
+</div><!-- /.auth-overlay -->
 
 <!-- MODAL: Add/Edit -->
 <div class="modal-overlay" id="modalOverlay">
@@ -2095,6 +2345,346 @@ function onQuarterChange() {
   document.getElementById('sidebar-footer') && (document.getElementById('sidebar-footer').textContent = qL);
   updateDashboard();
 }
+
+// ===== AUTH SYSTEM =====
+const AUTH_SESSION_KEY = 'dltv_auth_session';
+
+let _currentUser = null; // null = ยังไม่ login, { id, name, email, isGuest } = login แล้ว
+
+function _getSession() {
+  try { return JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null'); } catch(e){ return null; }
+}
+function _saveSession(user) {
+  try { localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(user)); } catch(e){}
+}
+function _hashSimple(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; }
+  return 'h' + Math.abs(h).toString(16);
+}
+
+function openAuthModal(tab) {
+  switchAuthTab(tab || 'login');
+  document.getElementById('authOverlay').classList.add('open');
+  setTimeout(()=>{
+    const el = document.getElementById(tab==='register' ? 'regName' : 'loginEmail');
+    if(el) el.focus();
+  }, 120);
+}
+function closeAuthModal() {
+  document.getElementById('authOverlay').classList.remove('open');
+}
+function switchAuthTab(tab) {
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('tabRegister').classList.toggle('active', tab==='register');
+  document.querySelector('.auth-tabs').style.display = tab==='forgot' ? 'none' : '';
+
+  document.getElementById('authLoginForm').style.display    = tab==='login'    ? 'flex' : 'none';
+  document.getElementById('authRegisterForm').style.display = tab==='register' ? 'flex' : 'none';
+  document.getElementById('authForgotForm').style.display   = tab==='forgot'   ? 'flex' : 'none';
+
+  // reset forgot steps เสมอเมื่อเปิดหน้า forgot
+  if (tab === 'forgot') {
+    document.getElementById('forgotStep1').style.display = '';
+    document.getElementById('forgotStep2').style.display = 'none';
+    document.getElementById('forgotEmail').value = '';
+    window._forgotEmail = '';
+  }
+
+  ['loginError','registerError','forgotError','forgotStep2Error','forgotStep2Success'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('show');
+  });
+
+  const focusMap = { login:'loginEmail', register:'regName', forgot:'forgotEmail' };
+  setTimeout(()=>{ const el=document.getElementById(focusMap[tab]); if(el) el.focus(); }, 120);
+}
+
+// Step 1 — ขอรหัสชั่วคราว
+async function authRequestReset() {
+  const email = (document.getElementById('forgotEmail').value || '').trim().toLowerCase();
+  const errEl = document.getElementById('forgotError');
+  const btn   = document.getElementById('forgotSubmitBtn');
+  errEl.classList.remove('show');
+
+  if (!email) { errEl.textContent = 'กรุณากรอกอีเมล'; errEl.classList.add('show'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'รูปแบบอีเมลไม่ถูกต้อง'; errEl.classList.add('show'); return; }
+  if (!_gasReady()) { errEl.textContent = '⚠️ ยังไม่ได้ตั้งค่า GAS URL'; errEl.classList.add('show'); return; }
+
+  btn.disabled = true; btn.textContent = '⏳ กำลังดำเนินการ...';
+  try {
+    const res = await _gasAuthCall({ action: 'resetPassword', email });
+    if (!res.success) {
+      errEl.textContent = res.message || 'ไม่พบอีเมลนี้ในระบบ';
+      errEl.classList.add('show');
+      return;
+    }
+    // บันทึก email ไว้ใช้ใน step 2
+    window._forgotEmail = email;
+    // แสดง step 2
+    document.getElementById('forgotStep1').style.display = 'none';
+    document.getElementById('forgotStep2').style.display = '';
+    document.getElementById('forgotStep2Banner').innerHTML =
+      `✅ สร้างรหัสชั่วคราวสำหรับ <strong>${email}</strong> แล้ว<br>
+       รหัสชั่วคราว: <strong style="font-size:15px;letter-spacing:.05em;color:#92400e">${res.tempPassword}</strong><br>
+       <span style="font-size:11px;">กรอกรหัสนี้แล้วตั้งรหัสผ่านใหม่ด้านล่างได้เลย</span>`;
+    document.getElementById('forgotStep2Error').classList.remove('show');
+    document.getElementById('forgotStep2Success').classList.remove('show');
+    document.getElementById('forgotTempPass').value = '';
+    document.getElementById('forgotNewPass').value  = '';
+    document.getElementById('forgotConfirmPass').value = '';
+    setTimeout(()=>{ document.getElementById('forgotTempPass').focus(); }, 120);
+  } catch(e) {
+    errEl.textContent = '❌ เชื่อมต่อ GAS ไม่สำเร็จ: ' + e.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false; btn.textContent = 'ขอรหัสชั่วคราว';
+  }
+}
+
+// Step 2 — ตั้งรหัสผ่านใหม่
+async function authChangePassword() {
+  const tempPass    = (document.getElementById('forgotTempPass').value    || '').trim();
+  const newPass     = (document.getElementById('forgotNewPass').value     || '');
+  const confirmPass = (document.getElementById('forgotConfirmPass').value || '');
+  const errEl = document.getElementById('forgotStep2Error');
+  const sucEl = document.getElementById('forgotStep2Success');
+  const btn   = document.getElementById('changePassBtn');
+  errEl.classList.remove('show');
+  sucEl.classList.remove('show');
+
+  if (!tempPass)             { errEl.textContent = 'กรุณากรอกรหัสชั่วคราว'; errEl.classList.add('show'); return; }
+  if (newPass.length < 6)    { errEl.textContent = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร'; errEl.classList.add('show'); return; }
+  if (newPass !== confirmPass){ errEl.textContent = 'รหัสผ่านใหม่ไม่ตรงกัน'; errEl.classList.add('show'); return; }
+  if (!_gasReady())           { errEl.textContent = '⚠️ ยังไม่ได้ตั้งค่า GAS URL'; errEl.classList.add('show'); return; }
+
+  btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
+  try {
+    const res = await _gasAuthCall({
+      action:          'changePassword',
+      email:           window._forgotEmail || '',
+      tempPasswordHash: _hashSimple(tempPass),
+      newPasswordHash:  _hashSimple(newPass)
+    });
+    if (!res.success) {
+      errEl.textContent = res.message || 'รหัสชั่วคราวไม่ถูกต้อง';
+      errEl.classList.add('show');
+      return;
+    }
+    sucEl.textContent = '✅ เปลี่ยนรหัสผ่านสำเร็จ! กำลังพาไปหน้าเข้าสู่ระบบ...';
+    sucEl.classList.add('show');
+    setTimeout(()=>{
+      switchAuthTab('login');
+      document.getElementById('loginEmail').value = window._forgotEmail || '';
+      window._forgotEmail = '';
+    }, 1800);
+  } catch(e) {
+    errEl.textContent = '❌ เชื่อมต่อ GAS ไม่สำเร็จ: ' + e.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false; btn.textContent = 'ตั้งรหัสผ่านใหม่';
+  }
+}
+
+// กลับ step 1
+function authBackToStep1() {
+  document.getElementById('forgotStep2').style.display = 'none';
+  document.getElementById('forgotStep1').style.display = '';
+  document.getElementById('forgotError').classList.remove('show');
+  document.getElementById('forgotEmail').value = '';
+  window._forgotEmail = '';
+  setTimeout(()=>{ document.getElementById('forgotEmail').focus(); }, 80);
+}
+
+// ── ตรวจสอบว่า GAS พร้อมหรือยัง ──
+function _gasReady() {
+  return GAS_ENABLED && _gasUrl && !_gasUrl.includes('YOUR_GAS');
+}
+
+// ── เรียก GAS action ผ่าน GET (ใช้ JSONP pattern เพื่อหลีกเลี่ยง CORS) ──
+function _gasAuthCall(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = '_authCb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      if (script.parentNode) script.remove();
+      reject(new Error('timeout'));
+    }, 15000);
+
+    window[cbName] = function(data) {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (script.parentNode) script.remove();
+      resolve(data);
+    };
+
+    const p = new URLSearchParams({ ...params, callback: cbName });
+    const script = document.createElement('script');
+    script.src = _gasUrl + '?' + p.toString();
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (script.parentNode) script.remove();
+      reject(new Error('network error'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+async function authLogin() {
+  const email = (document.getElementById('loginEmail').value || '').trim().toLowerCase();
+  const pass  = document.getElementById('loginPassword').value || '';
+  const errEl = document.getElementById('loginError');
+  const btn   = document.getElementById('loginSubmitBtn');
+  errEl.classList.remove('show');
+
+  if (!email || !pass) { errEl.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน'; errEl.classList.add('show'); return; }
+
+  if (!_gasReady()) {
+    errEl.textContent = '⚠️ ยังไม่ได้ตั้งค่า GAS URL — กรุณาไปที่เมนู Google Sheets เพื่อตั้งค่าก่อน';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = '⏳ กำลังตรวจสอบ...';
+  try {
+    const res = await _gasAuthCall({ action: 'loginUser', email, passwordHash: _hashSimple(pass) });
+    if (!res.success) {
+      errEl.textContent = res.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+      errEl.classList.add('show');
+      return;
+    }
+    _setLoggedIn({ id: res.user.id, name: res.user.name, email: res.user.email, isGuest: false });
+    closeAuthModal();
+    showToast(`✅ ยินดีต้อนรับ ${res.user.name}!`, 2500);
+  } catch(e) {
+    errEl.textContent = '❌ เชื่อมต่อ GAS ไม่สำเร็จ: ' + e.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+  }
+}
+
+async function authRegister() {
+  const name    = (document.getElementById('regName').value || '').trim();
+  const email   = (document.getElementById('regEmail').value || '').trim().toLowerCase();
+  const pass    = document.getElementById('regPassword').value || '';
+  const confirm = document.getElementById('regConfirm').value || '';
+  const errEl   = document.getElementById('registerError');
+  const btn     = document.getElementById('registerSubmitBtn');
+  errEl.classList.remove('show');
+
+  if (!name)  { errEl.textContent = 'กรุณากรอกชื่อ-นามสกุล'; errEl.classList.add('show'); return; }
+  if (!email) { errEl.textContent = 'กรุณากรอกอีเมล'; errEl.classList.add('show'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'รูปแบบอีเมลไม่ถูกต้อง'; errEl.classList.add('show'); return; }
+  if (pass.length < 6) { errEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; errEl.classList.add('show'); return; }
+  if (pass !== confirm) { errEl.textContent = 'รหัสผ่านไม่ตรงกัน'; errEl.classList.add('show'); return; }
+
+  if (!_gasReady()) {
+    errEl.textContent = '⚠️ ยังไม่ได้ตั้งค่า GAS URL — กรุณาไปที่เมนู Google Sheets เพื่อตั้งค่าก่อน';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = '⏳ กำลังสมัคร...';
+  try {
+    const res = await _gasAuthCall({
+      action: 'registerUser',
+      name,
+      email,
+      passwordHash: _hashSimple(pass),
+      createdAt: new Date().toISOString()
+    });
+    if (!res.success) {
+      errEl.textContent = res.message || 'สมัครสมาชิกไม่สำเร็จ';
+      errEl.classList.add('show');
+      return;
+    }
+    _setLoggedIn({ id: res.user.id, name, email, isGuest: false });
+    closeAuthModal();
+    showToast(`🎉 สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ ${name}`, 3000);
+  } catch(e) {
+    errEl.textContent = '❌ เชื่อมต่อ GAS ไม่สำเร็จ: ' + e.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false; btn.textContent = 'สมัครสมาชิก';
+  }
+}
+
+function authGuest() {
+  _setLoggedIn({ id: 'guest', name: 'ผู้เยี่ยมชม', email: '', isGuest: true });
+  closeAuthModal();
+  showToast('👁 เข้าสู่โหมดผู้เยี่ยมชม · ดูข้อมูลได้อย่างเดียว', 2500);
+}
+
+function authLogout() {
+  _currentUser = null;
+  _saveSession(null);
+  _applyAuthUI();
+  toggleUserMenu(true);
+  showToast('👋 ออกจากระบบแล้ว', 2000);
+  setTimeout(()=> openAuthModal('login'), 500);
+}
+
+function _setLoggedIn(user) {
+  _currentUser = user;
+  _saveSession(user); // เก็บ session ใน localStorage เฉพาะ session ปัจจุบัน (ไม่ใช่ข้อมูล users)
+  _applyAuthUI();
+}
+
+function _applyAuthUI() {
+  const loggedIn = !!_currentUser && !_currentUser.isGuest;
+  const guest    = !!_currentUser && _currentUser.isGuest;
+
+  ['topbarAddBtn','tableAddBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = loggedIn ? '' : 'none';
+  });
+
+  const rb = document.getElementById('readonlyBadge');
+  if (rb) rb.style.display = guest ? '' : 'none';
+
+  const lb = document.getElementById('loginBtn');
+  if (lb) lb.style.display = _currentUser ? 'none' : '';
+
+  const pw = document.getElementById('userPillWrap');
+  if (pw) pw.style.display = _currentUser ? '' : 'none';
+
+  if (_currentUser) {
+    const initials = _currentUser.isGuest ? '👁' : _currentUser.name.slice(0,1).toUpperCase();
+    document.getElementById('userAvatar').textContent = initials;
+    document.getElementById('userPillName').textContent = _currentUser.isGuest ? 'ผู้เยี่ยมชม' : _currentUser.name;
+    document.getElementById('menuDisplayName').textContent = _currentUser.name;
+    document.getElementById('menuEmail').textContent = _currentUser.email || 'ผู้เยี่ยมชม (ไม่มีบัญชี)';
+  }
+
+  renderTable && renderTable();
+}
+
+function toggleUserMenu(forceClose) {
+  const menu = document.getElementById('userMenu');
+  if (!menu) return;
+  if (forceClose) { menu.classList.remove('open'); return; }
+  menu.classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  const pill = document.getElementById('userPillWrap');
+  if (pill && !pill.contains(e.target)) {
+    const menu = document.getElementById('userMenu');
+    if (menu) menu.classList.remove('open');
+  }
+});
+
+function _isEditable() {
+  return !!_currentUser && !_currentUser.isGuest;
+}
+
+// Restore session on load (เก็บแค่ session ไม่ใช่ users)
+(function _initAuth(){
+  const session = _getSession();
+  if (session) _currentUser = session;
+})();
 
 // ===== STORAGE =====
 function saveToLocal(silent) {
@@ -2857,12 +3447,13 @@ function renderTable() {
             <button class="btn btn-sm btn-icon" title="ดูรายละเอียด" onclick="openDetail(${p.id})" style="color:var(--s5)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
+            ${_isEditable() ? `
             <button class="btn btn-sm btn-icon" title="แก้ไข" onclick="openEdit(${p.id})" style="color:var(--accent)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <button class="btn btn-sm btn-icon btn-danger" title="ลบ" onclick="confirmDelete(${p.id})">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            </button>
+            </button>` : ''}
           </div>
         </td>
       </tr>`;
@@ -3704,7 +4295,7 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxv-dbH9_rER-_7hDGip3YKCZ_LrYWr6ddDNs6K82imK0BS-H0uOQcilfYLENpuYT7hkQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyeTQiCQwuVSofwxW1AxCVaU1zTpryuN-wpb61t2P6PeFd79Qtr3qs8QfmMhNKgjnRj3A/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
@@ -3801,14 +4392,26 @@ function _initGasUI(){
 }
 
 function copyGASTemplate(){
-  const tpl = `// ===== Google Apps Script สำหรับ DLTV Report (รองรับรูปภาพ + อนุกรรมการ) =====
-// วางโค้ดนี้ใน Google Apps Script แล้ว Deploy เป็น Web App
-// Execute as: Me | Who has access: Anyone
+  const tpl = `// ===== Google Apps Script สำหรับ DLTV Report =====
+// รองรับ: Projects Sheet + Users Sheet (Auth)
+// Deploy: Execute as Me | Who has access: Anyone
 
 function doGet(e) {
   const action = e.parameter.action;
-  if (action === 'getAll') return getAll();
-  return ContentService.createTextOutput(JSON.stringify({success:false,message:'Unknown action'}))
+  const cb     = e.parameter.callback; // JSONP callback
+  let result;
+
+  if (action === 'getAll')       result = getAll();
+  else if (action === 'loginUser')    result = loginUser(e.parameter);
+  else if (action === 'registerUser') result = registerUser(e.parameter);
+  else result = { success: false, message: 'Unknown action' };
+
+  const json = JSON.stringify(result);
+  if (cb) {
+    return ContentService.createTextOutput(cb + '(' + json + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -3816,46 +4419,55 @@ function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
     const action = payload.action;
-    if (action === 'save')     return saveProject(payload.data);
-    if (action === 'update')   return saveProject(payload.data);
-    if (action === 'delete')   return deleteProject(payload.id);
-    if (action === 'bulkSave') return bulkSave(payload.data);
-    return ok({message:'Unknown action'});
+    if (action === 'save')     return ok(saveProject(payload.data));
+    if (action === 'update')   return ok(saveProject(payload.data));
+    if (action === 'delete')   return ok(deleteProject(payload.id));
+    if (action === 'bulkSave') return ok(bulkSave(payload.data));
+    return ok({ success: false, message: 'Unknown action' });
   } catch(err) {
-    return err_(err.message);
+    return ok({ success: false, message: err.message });
   }
 }
 
+// ── Projects Sheet ──────────────────────────────────────────
 function getSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   return ss.getSheetByName('Projects') || ss.getSheets()[0];
 }
 
+function getUserSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Users');
+  if (!sheet) {
+    sheet = ss.insertSheet('Users');
+    sheet.appendRow(['id', 'name', 'email', 'passwordHash', 'createdAt']);
+    sheet.getRange(1, 1, 1, 5)
+      .setBackground('#059669').setFontColor('#ffffff').setFontWeight('bold');
+  }
+  return sheet;
+}
+
 function getHeaders() {
-  return [
-    'id', 'name', 'strategy', 'budget', 'spent', 'po', 'status',
-    'result', 'kpi', 'problems', 'solutions', 'quarter',
-    'owner', 'committees',
-    'image_count', 'images_json'
-  ];
+  return ['id','name','strategy','budget','spent','po','status',
+          'result','kpi','problems','solutions','quarter',
+          'owner','committees','image_count','images_json'];
 }
 
 function ensureHeaders() {
   const sheet = getSheet();
   if (sheet.getLastRow() === 0) {
-    const headerRow = sheet.appendRow(getHeaders());
-    sheet.getRange(1, 1, 1, getHeaders().length)
+    sheet.appendRow(getHeaders());
+    sheet.getRange(1,1,1,getHeaders().length)
       .setBackground('#3b72f0').setFontColor('#ffffff').setFontWeight('bold');
   }
 }
 
 function rowToObj(row) {
-  const h = getHeaders();
-  const obj = {};
-  h.forEach((k, i) => obj[k] = row[i]);
-  obj.budget = Number(obj.budget) || 0;
-  obj.spent  = Number(obj.spent)  || 0;
-  obj.po     = Number(obj.po)     || 0;
+  const h = getHeaders(); const obj = {};
+  h.forEach((k,i) => obj[k] = row[i]);
+  obj.budget = Number(obj.budget)||0;
+  obj.spent  = Number(obj.spent)||0;
+  obj.po     = Number(obj.po)||0;
   obj.kpi    = obj.kpi ? String(obj.kpi).split('|').filter(Boolean) : [];
   obj.owner  = obj.owner || '';
   try { obj.committees = obj.committees ? JSON.parse(obj.committees) : []; } catch(e){ obj.committees=[]; }
@@ -3866,51 +4478,42 @@ function rowToObj(row) {
 
 function objToRow(d) {
   const images = d.images || [];
-  return [
-    d.id, d.name, d.strategy,
-    d.budget||0, d.spent||0, d.po||0,
-    d.status, d.result||'', (d.kpi||[]).join('|'),
-    d.problems||'', d.solutions||'', d.quarter||'all',
-    d.owner||'',
-    JSON.stringify(d.committees||[]),
-    images.length,
-    JSON.stringify(images.map(i=>({name:i.name, dataUrl:i.dataUrl})))
-  ];
+  return [d.id, d.name, d.strategy, d.budget||0, d.spent||0, d.po||0,
+          d.status, d.result||'', (d.kpi||[]).join('|'),
+          d.problems||'', d.solutions||'', d.quarter||'all', d.owner||'',
+          JSON.stringify(d.committees||[]), images.length,
+          JSON.stringify(images.map(i=>({name:i.name,dataUrl:i.dataUrl})))];
 }
 
 function getAll() {
   ensureHeaders();
   const sheet = getSheet();
   const rows = sheet.getDataRange().getValues();
-  if (rows.length <= 1) return ok({success:true, data:[]});
-  const data = rows.slice(1).map(rowToObj);
-  return ok({success:true, data});
+  if (rows.length <= 1) return { success: true, data: [] };
+  return { success: true, data: rows.slice(1).map(rowToObj) };
 }
 
 function saveProject(d) {
   ensureHeaders();
   const sheet = getSheet();
-  const rows = sheet.getDataRange().getValues();
-  let rowIdx = -1;
+  const rows  = sheet.getDataRange().getValues();
+  let rowIdx  = -1;
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(d.id)) { rowIdx = i + 1; break; }
   }
   const row = objToRow(d);
-  if (rowIdx > 0) {
-    sheet.getRange(rowIdx, 1, 1, row.length).setValues([row]);
-  } else {
-    sheet.appendRow(row);
-  }
-  return ok({success:true});
+  if (rowIdx > 0) sheet.getRange(rowIdx, 1, 1, row.length).setValues([row]);
+  else sheet.appendRow(row);
+  return { success: true };
 }
 
 function deleteProject(id) {
   const sheet = getSheet();
-  const rows = sheet.getDataRange().getValues();
+  const rows  = sheet.getDataRange().getValues();
   for (let i = rows.length - 1; i >= 1; i--) {
     if (String(rows[i][0]) === String(id)) { sheet.deleteRow(i + 1); break; }
   }
-  return ok({success:true});
+  return { success: true };
 }
 
 function bulkSave(data) {
@@ -3922,22 +4525,51 @@ function bulkSave(data) {
     const rows = data.map(objToRow);
     sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
   }
-  return ok({success:true, count: data ? data.length : 0});
+  return { success: true, count: data ? data.length : 0 };
 }
 
+// ── Users Auth ──────────────────────────────────────────────
+function registerUser(params) {
+  const sheet = getUserSheet();
+  const rows  = sheet.getDataRange().getValues();
+  const email = (params.email || '').toLowerCase().trim();
+
+  // ตรวจสอบซ้ำ
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][2]).toLowerCase() === email) {
+      return { success: false, message: 'อีเมลนี้ถูกใช้งานแล้ว' };
+    }
+  }
+
+  const id = 'u_' + Date.now();
+  sheet.appendRow([id, params.name, email, params.passwordHash, params.createdAt || new Date().toISOString()]);
+  return { success: true, user: { id, name: params.name, email } };
+}
+
+function loginUser(params) {
+  const sheet = getUserSheet();
+  const rows  = sheet.getDataRange().getValues();
+  const email = (params.email || '').toLowerCase().trim();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][2]).toLowerCase() === email &&
+        String(rows[i][3]) === String(params.passwordHash)) {
+      return { success: true, user: { id: rows[i][0], name: rows[i][1], email: rows[i][2] } };
+    }
+  }
+  return { success: false, message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' };
+}
+
+// ── Helper ──────────────────────────────────────────────────
 function ok(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
-}
-function err_(msg) {
-  return ContentService.createTextOutput(JSON.stringify({success:false, message:msg}))
-    .setMimeType(ContentService.MimeType.JSON);
 }`;
   navigator.clipboard.writeText(tpl).then(()=>{
-    document.getElementById('gasTemplateCopyStatus').textContent = '✅ คัดลอก GAS Template สำเร็จ (รองรับ owner + อนุกรรมการ + รูปภาพ)';
+    document.getElementById('gasTemplateCopyStatus').textContent = '✅ คัดลอก GAS Template สำเร็จ (รองรับ Projects + Users Auth)';
     setTimeout(()=>{ document.getElementById('gasTemplateCopyStatus').textContent=''; }, 4000);
   }).catch(()=>{
-    document.getElementById('gasTemplateCopyStatus').textContent = '❌ ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคัดลอกโค้ดด้วยตนเอง';
+    document.getElementById('gasTemplateCopyStatus').textContent = '❌ ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคัดลอกโค้ดด้านบนด้วยตนเอง';
   });
 }
 
@@ -4524,6 +5156,13 @@ window._pendingSaveTs = 0;
   loadFromLocal();
   if(overlay) overlay.style.display='none';
   updateDashboard();
+
+  // ── Apply auth UI state ──
+  _applyAuthUI();
+  // ถ้าไม่มี session → แสดง auth modal
+  if (!_currentUser) {
+    setTimeout(() => openAuthModal('login'), 300);
+  }
 
   // ── ฟังก์ชัน sync จาก Sheet ──────────────────────────────────
   // safe=true  → ป้องกันทับข้อมูลที่เพิ่งบันทึกไปภายใน 10 วินาที
