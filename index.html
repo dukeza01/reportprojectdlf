@@ -2340,7 +2340,7 @@ function onQuarterChange() {
   document.getElementById('quarterLabel').textContent = 'แสดงข้อมูล: '+qL;
   document.getElementById('quarterBadge').textContent = qL;
   document.getElementById('summaryQuarterLabel').textContent = qL+' · ปีงบประมาณ 2569';
-  document.getElementById('sidebar-footer') && (document.getElementById('sidebar-footer').textContent = qL);
+  document.querySelector('.sidebar-footer') && (document.querySelector('.sidebar-footer').textContent = qL);
   updateDashboard();
 }
 
@@ -2713,10 +2713,15 @@ function _applyAuthUI() {
 
   if (_currentUser) {
     const initials = _currentUser.isGuest ? '👁' : _currentUser.name.slice(0,1).toUpperCase();
-    document.getElementById('userAvatar').textContent = initials;
-    document.getElementById('userPillName').textContent = _currentUser.isGuest ? 'ผู้เยี่ยมชม' : _currentUser.name;
-    document.getElementById('menuDisplayName').textContent = _currentUser.name;
-    document.getElementById('menuEmail').textContent = _currentUser.email || 'ผู้เยี่ยมชม (ไม่มีบัญชี)';
+    const avatarEl = document.getElementById('userAvatar');
+    const pillNameEl = document.getElementById('userPillName');
+    const menuNameEl = document.getElementById('menuDisplayName');
+    const menuEmailEl = document.getElementById('menuEmail');
+    
+    if (avatarEl) avatarEl.textContent = initials;
+    if (pillNameEl) pillNameEl.textContent = _currentUser.isGuest ? 'ผู้เยี่ยมชม' : _currentUser.name;
+    if (menuNameEl) menuNameEl.textContent = _currentUser.name;
+    if (menuEmailEl) menuEmailEl.textContent = _currentUser.email || 'ผู้เยี่ยมชม (ไม่มีบัญชี)';
   }
 
   renderTable && renderTable();
