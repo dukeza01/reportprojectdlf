@@ -2407,19 +2407,11 @@ async function authRequestReset() {
 
   if (!email) { errEl.textContent = 'กรุณากรอกอีเมล'; errEl.classList.add('show'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'รูปแบบอีเมลไม่ถูกต้อง'; errEl.classList.add('show'); return; }
-  if (!_gasReady()) { errEl.textContent = '⚠️ ยังไม่ได้ตั้งค่า GAS URL'; errEl.classList.add('show'); return; }
 
   btn.disabled = true; btn.textContent = '⏳ กำลังดำเนินการ...';
-  try {
-    const res = await _gasAuthCall({ action: 'resetPassword', email });
-    if (!res.success) {
-      errEl.textContent = res.message || 'ไม่พบอีเมลนี้ในระบบ';
-      errEl.classList.add('show');
-      return;
-    }
-    // บันทึก email ไว้ใช้ใน step 2
+
+  const _showStep2 = (res) => {
     window._forgotEmail = email;
-    // แสดง step 2
     document.getElementById('forgotStep1').style.display = 'none';
     document.getElementById('forgotStep2').style.display = '';
     document.getElementById('forgotStep2Banner').innerHTML =
@@ -2432,12 +2424,25 @@ async function authRequestReset() {
     document.getElementById('forgotNewPass').value  = '';
     document.getElementById('forgotConfirmPass').value = '';
     setTimeout(()=>{ document.getElementById('forgotTempPass').focus(); }, 120);
-  } catch(e) {
-    errEl.textContent = '❌ เชื่อมต่อ GAS ไม่สำเร็จ: ' + e.message;
-    errEl.classList.add('show');
-  } finally {
-    btn.disabled = false; btn.textContent = 'ขอรหัสชั่วคราว';
+  };
+
+  // ── ลอง GAS ก่อน ──
+  if (_gasReady()) {
+    try {
+      const res = await _gasAuthCall({ action: 'resetPassword', email });
+      if (res.success) { _showStep2(res); btn.disabled = false; btn.textContent = 'ขอรหัสชั่วคราว'; return; }
+    } catch(e) { /* ตกไป local */ }
   }
+
+  // ── Fallback: Local ──
+  const localRes = _localResetPassword(email);
+  if (localRes.success) {
+    _showStep2(localRes);
+  } else {
+    errEl.textContent = localRes.message || 'ไม่พบอีเมลนี้ในระบบ';
+    errEl.classList.add('show');
+  }
+  btn.disabled = false; btn.textContent = 'ขอรหัสชั่วคราว';
 }
 
 // Step 2 — ตั้งรหัสผ่านใหม่
@@ -2454,34 +2459,35 @@ async function authChangePassword() {
   if (!tempPass)             { errEl.textContent = 'กรุณากรอกรหัสชั่วคราว'; errEl.classList.add('show'); return; }
   if (newPass.length < 6)    { errEl.textContent = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร'; errEl.classList.add('show'); return; }
   if (newPass !== confirmPass){ errEl.textContent = 'รหัสผ่านใหม่ไม่ตรงกัน'; errEl.classList.add('show'); return; }
-  if (!_gasReady())           { errEl.textContent = '⚠️ ยังไม่ได้ตั้งค่า GAS URL'; errEl.classList.add('show'); return; }
 
   btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
-  try {
-    const res = await _gasAuthCall({
-      action:          'changePassword',
-      email:           window._forgotEmail || '',
-      tempPasswordHash: _hashSimple(tempPass),
-      newPasswordHash:  _hashSimple(newPass)
-    });
-    if (!res.success) {
-      errEl.textContent = res.message || 'รหัสชั่วคราวไม่ถูกต้อง';
-      errEl.classList.add('show');
-      return;
-    }
+  const email2 = window._forgotEmail || '';
+  const tempHash = _hashSimple(tempPass);
+  const newHash  = _hashSimple(newPass);
+
+  const _onSuccess = () => {
     sucEl.textContent = '✅ เปลี่ยนรหัสผ่านสำเร็จ! กำลังพาไปหน้าเข้าสู่ระบบ...';
     sucEl.classList.add('show');
-    setTimeout(()=>{
-      switchAuthTab('login');
-      document.getElementById('loginEmail').value = window._forgotEmail || '';
-      window._forgotEmail = '';
-    }, 1800);
-  } catch(e) {
-    errEl.textContent = '❌ เชื่อมต่อ GAS ไม่สำเร็จ: ' + e.message;
-    errEl.classList.add('show');
-  } finally {
-    btn.disabled = false; btn.textContent = 'ตั้งรหัสผ่านใหม่';
+    setTimeout(()=>{ switchAuthTab('login'); document.getElementById('loginEmail').value = email2; window._forgotEmail = ''; }, 1800);
+  };
+
+  // ── ลอง GAS ก่อน ──
+  if (_gasReady()) {
+    try {
+      const res = await _gasAuthCall({ action: 'changePassword', email: email2, tempPasswordHash: tempHash, newPasswordHash: newHash });
+      if (res.success) { _onSuccess(); btn.disabled = false; btn.textContent = 'ตั้งรหัสผ่านใหม่'; return; }
+    } catch(e) { /* ตกไป local */ }
   }
+
+  // ── Fallback: Local ──
+  const localRes = _localChangePassword(email2, tempHash, newHash);
+  if (localRes.success) {
+    _onSuccess();
+  } else {
+    errEl.textContent = localRes.message || 'รหัสชั่วคราวไม่ถูกต้อง';
+    errEl.classList.add('show');
+  }
+  btn.disabled = false; btn.textContent = 'ตั้งรหัสผ่านใหม่';
 }
 
 // กลับ step 1
@@ -2529,6 +2535,49 @@ function _gasAuthCall(params) {
   });
 }
 
+// ── Local user storage (fallback เมื่อไม่มี GAS) ──────────────
+const LOCAL_USERS_KEY = 'dltv_local_users_v1';
+function _localUsers() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '[]'); } catch(e){ return []; }
+}
+function _saveLocalUsers(users) {
+  try { localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users)); } catch(e){}
+}
+function _localLogin(email, passwordHash) {
+  const users = _localUsers();
+  const u = users.find(u => u.email === email && u.passwordHash === passwordHash);
+  if (u) return { success: true, user: { id: u.id, name: u.name, email: u.email } };
+  return { success: false, message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' };
+}
+function _localRegister(name, email, passwordHash) {
+  const users = _localUsers();
+  if (users.find(u => u.email === email)) return { success: false, message: 'อีเมลนี้ถูกใช้งานแล้ว' };
+  const u = { id: 'u_' + Date.now(), name, email, passwordHash, createdAt: new Date().toISOString() };
+  users.push(u);
+  _saveLocalUsers(users);
+  return { success: true, user: { id: u.id, name: u.name, email: u.email } };
+}
+function _localResetPassword(email) {
+  const users = _localUsers();
+  const u = users.find(u => u.email === email);
+  if (!u) return { success: false, message: 'ไม่พบอีเมลนี้ในระบบ' };
+  const tmp = 'tmp' + Math.floor(100000 + Math.random() * 900000);
+  u.tempPassword = _hashSimple(tmp);
+  u.tempPasswordPlain = tmp;
+  _saveLocalUsers(users);
+  return { success: true, tempPassword: tmp };
+}
+function _localChangePassword(email, tempHash, newHash) {
+  const users = _localUsers();
+  const u = users.find(u => u.email === email);
+  if (!u) return { success: false, message: 'ไม่พบอีเมล' };
+  if (u.tempPassword !== tempHash) return { success: false, message: 'รหัสชั่วคราวไม่ถูกต้อง' };
+  u.passwordHash = newHash;
+  delete u.tempPassword; delete u.tempPasswordPlain;
+  _saveLocalUsers(users);
+  return { success: true };
+}
+
 async function authLogin() {
   const email = (document.getElementById('loginEmail').value || '').trim().toLowerCase();
   const pass  = document.getElementById('loginPassword').value || '';
@@ -2538,29 +2587,37 @@ async function authLogin() {
 
   if (!email || !pass) { errEl.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน'; errEl.classList.add('show'); return; }
 
-  if (!_gasReady()) {
-    errEl.textContent = '⚠️ ยังไม่ได้ตั้งค่า GAS URL — กรุณาไปที่เมนู Google Sheets เพื่อตั้งค่าก่อน';
-    errEl.classList.add('show');
-    return;
+  btn.disabled = true; btn.textContent = '⏳ กำลังตรวจสอบ...';
+  const hash = _hashSimple(pass);
+
+  // ── ลอง GAS ก่อน ──
+  if (_gasReady()) {
+    try {
+      const res = await _gasAuthCall({ action: 'loginUser', email, passwordHash: hash });
+      if (res.success) {
+        _setLoggedIn({ id: res.user.id, name: res.user.name, email: res.user.email, isGuest: false });
+        closeAuthModal();
+        showToast(`✅ ยินดีต้อนรับ ${res.user.name}!`, 2500);
+        btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+        return;
+      }
+      // GAS ตอบกลับแต่ login ไม่ผ่าน → ลอง local ด้วย
+    } catch(e) {
+      // GAS ใช้งานไม่ได้ → ตกไป local
+    }
   }
 
-  btn.disabled = true; btn.textContent = '⏳ กำลังตรวจสอบ...';
-  try {
-    const res = await _gasAuthCall({ action: 'loginUser', email, passwordHash: _hashSimple(pass) });
-    if (!res.success) {
-      errEl.textContent = res.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-      errEl.classList.add('show');
-      return;
-    }
-    _setLoggedIn({ id: res.user.id, name: res.user.name, email: res.user.email, isGuest: false });
+  // ── Fallback: Local users ──
+  const localRes = _localLogin(email, hash);
+  if (localRes.success) {
+    _setLoggedIn({ id: localRes.user.id, name: localRes.user.name, email: localRes.user.email, isGuest: false });
     closeAuthModal();
-    showToast(`✅ ยินดีต้อนรับ ${res.user.name}!`, 2500);
-  } catch(e) {
-    errEl.textContent = '❌ เชื่อมต่อ GAS ไม่สำเร็จ: ' + e.message;
+    showToast(`✅ ยินดีต้อนรับ ${localRes.user.name}! (โหมด Local)`, 2500);
+  } else {
+    errEl.textContent = localRes.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
     errEl.classList.add('show');
-  } finally {
-    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
   }
+  btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
 }
 
 async function authRegister() {
@@ -2578,35 +2635,41 @@ async function authRegister() {
   if (pass.length < 6) { errEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; errEl.classList.add('show'); return; }
   if (pass !== confirm) { errEl.textContent = 'รหัสผ่านไม่ตรงกัน'; errEl.classList.add('show'); return; }
 
-  if (!_gasReady()) {
-    errEl.textContent = '⚠️ ยังไม่ได้ตั้งค่า GAS URL — กรุณาไปที่เมนู Google Sheets เพื่อตั้งค่าก่อน';
-    errEl.classList.add('show');
-    return;
+  btn.disabled = true; btn.textContent = '⏳ กำลังสมัคร...';
+  const hash = _hashSimple(pass);
+
+  // ── ลอง GAS ก่อน ──
+  if (_gasReady()) {
+    try {
+      const res = await _gasAuthCall({ action: 'registerUser', name, email, passwordHash: hash, createdAt: new Date().toISOString() });
+      if (res.success) {
+        _setLoggedIn({ id: res.user.id, name, email, isGuest: false });
+        closeAuthModal();
+        showToast(`🎉 สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ ${name}`, 3000);
+        btn.disabled = false; btn.textContent = 'สมัครสมาชิก';
+        return;
+      } else {
+        errEl.textContent = res.message || 'สมัครสมาชิกไม่สำเร็จ';
+        errEl.classList.add('show');
+        btn.disabled = false; btn.textContent = 'สมัครสมาชิก';
+        return;
+      }
+    } catch(e) {
+      // GAS ใช้งานไม่ได้ → ตกไป local
+    }
   }
 
-  btn.disabled = true; btn.textContent = '⏳ กำลังสมัคร...';
-  try {
-    const res = await _gasAuthCall({
-      action: 'registerUser',
-      name,
-      email,
-      passwordHash: _hashSimple(pass),
-      createdAt: new Date().toISOString()
-    });
-    if (!res.success) {
-      errEl.textContent = res.message || 'สมัครสมาชิกไม่สำเร็จ';
-      errEl.classList.add('show');
-      return;
-    }
-    _setLoggedIn({ id: res.user.id, name, email, isGuest: false });
+  // ── Fallback: Local users ──
+  const localRes = _localRegister(name, email, hash);
+  if (localRes.success) {
+    _setLoggedIn({ id: localRes.user.id, name, email, isGuest: false });
     closeAuthModal();
-    showToast(`🎉 สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ ${name}`, 3000);
-  } catch(e) {
-    errEl.textContent = '❌ เชื่อมต่อ GAS ไม่สำเร็จ: ' + e.message;
+    showToast(`🎉 สมัครสมาชิกสำเร็จ! (โหมด Local) ยินดีต้อนรับ ${name}`, 3000);
+  } else {
+    errEl.textContent = localRes.message || 'สมัครสมาชิกไม่สำเร็จ';
     errEl.classList.add('show');
-  } finally {
-    btn.disabled = false; btn.textContent = 'สมัครสมาชิก';
   }
+  btn.disabled = false; btn.textContent = 'สมัครสมาชิก';
 }
 
 function authGuest() {
@@ -4451,10 +4514,12 @@ function doGet(e) {
   const cb     = e.parameter.callback; // JSONP callback
   let result;
 
-  if (action === 'getAll')       result = getAll();
+  if (action === 'getAll')            result = getAll();
   else if (action === 'loginUser')    result = loginUser(e.parameter);
   else if (action === 'registerUser') result = registerUser(e.parameter);
-  else result = { success: false, message: 'Unknown action' };
+  else if (action === 'resetPassword')   result = resetPassword(e.parameter);
+  else if (action === 'changePassword')  result = changePassword(e.parameter);
+  else result = { success: false, message: 'Unknown GET action: ' + action };
 
   const json = JSON.stringify(result);
   if (cb) {
@@ -4608,6 +4673,50 @@ function loginUser(params) {
     }
   }
   return { success: false, message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' };
+}
+
+function resetPassword(params) {
+  const sheet = getUserSheet();
+  const rows  = sheet.getDataRange().getValues();
+  const email = (params.email || '').toLowerCase().trim();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][2]).toLowerCase() === email) {
+      const tmp = 'tmp' + Math.floor(100000 + Math.random() * 900000);
+      // เก็บ tempPasswordHash ใน col 5 (index 4, 0-based)
+      // Users sheet: id | name | email | passwordHash | tempPasswordHash | createdAt
+      // ถ้า sheet มีแค่ 5 col ให้ append; ถ้ามี 6+ ให้ set
+      const lastCol = rows[i].length;
+      sheet.getRange(i + 1, 5, 1, 1).setValue(hashSimpleGAS(tmp));
+      return { success: true, tempPassword: tmp };
+    }
+  }
+  return { success: false, message: 'ไม่พบอีเมลนี้ในระบบ' };
+}
+
+function changePassword(params) {
+  const sheet = getUserSheet();
+  const rows  = sheet.getDataRange().getValues();
+  const email = (params.email || '').toLowerCase().trim();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][2]).toLowerCase() === email) {
+      const storedTemp = String(rows[i][4] || '');
+      if (storedTemp !== String(params.tempPasswordHash)) {
+        return { success: false, message: 'รหัสชั่วคราวไม่ถูกต้อง' };
+      }
+      sheet.getRange(i + 1, 4, 1, 1).setValue(params.newPasswordHash);
+      sheet.getRange(i + 1, 5, 1, 1).setValue(''); // ล้าง temp
+      return { success: true };
+    }
+  }
+  return { success: false, message: 'ไม่พบอีเมล' };
+}
+
+function hashSimpleGAS(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = (Math.imul ? Math.imul(31, h) : (31 * h) | 0) + str.charCodeAt(i) | 0; }
+  return 'h' + Math.abs(h).toString(16);
 }
 
 // ── Helper ──────────────────────────────────────────────────
