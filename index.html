@@ -1338,7 +1338,7 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
             <div class="metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
             <div class="metric-label">โครงการทั้งหมด</div>
             <div class="metric-value" id="m-total">—</div>
-            <div class="metric-sub" id="m-total-sub">5 ยุทธศาสตร์</div>
+            <div class="metric-sub" id="m-total-sub">4 ยุทธศาสตร์ + งบสำนักงาน</div>
           </div>
           <div class="metric-card c-green">
             <div class="metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
@@ -2309,9 +2309,7 @@ let currentQuarter = 'all';
 // ===== UTILS =====
 function fmt(n) {
   n = n||0;
-  if (n>=1000000) return (n/1000000).toFixed(2)+'M';
-  if (n>=1000) return (n/1000).toFixed(0)+'K';
-  return n.toLocaleString('th-TH');
+  return Math.round(n).toLocaleString('th-TH');
 }
 function fmtFull(n) { return (n||0).toLocaleString('th-TH'); }
 
@@ -2725,7 +2723,7 @@ function showPage(page, strategyFilter) {
 
   const titles = {
     dashboard:    ['Dashboard สรุปภาพรวม','รายงานผลการดำเนินงานโครงการ ปีงบประมาณ พ.ศ. 2569'],
-    projects:     ['รายการโครงการ','โครงการทั้งหมด 5 ยุทธศาสตร์'],
+    projects:     ['รายการโครงการ','โครงการทั้งหมด 4 ยุทธศาสตร์ + งบบริหารสำนักงาน'],
     gsheet:       ['Google Sheets','นำเข้า / ส่งออกข้อมูล'],
     livetracking: ['📡 ติดตามสด','ระบบติดตามผลการดำเนินงานแบบเรียลไทม์']
   };
@@ -2830,11 +2828,12 @@ function _ltDiff(prev, curr) {
   const currMap = {};
   (curr||[]).forEach(p => currMap[p.id] = p);
 
+  const _actorName = () => (_currentUser && !_currentUser.isGuest) ? (_currentUser.name || _currentUser.email || 'ผู้ใช้') : null;
   (curr||[]).forEach(p => {
     const before = prevMap[p.id];
     const f = _ltProjectFingerprint(p);
     if (!before) {
-      events.push({ type:'created', id:p.id, name:p.name, status:p.status, ts:Date.now(), change:'โครงการใหม่' });
+      events.push({ type:'created', id:p.id, name:p.name, status:p.status, ts:Date.now(), change:'โครงการใหม่', user:_actorName() });
       return;
     }
     const changes = [];
@@ -2847,12 +2846,12 @@ function _ltDiff(prev, curr) {
     if (before.solutions !== f.solutions) changes.push({ field:'แนวทางแก้ไข', from:'', to:'(อัปเดต)' });
     if (before.owner !== f.owner)   changes.push({ field:'ผู้รับผิดชอบ', from:before.owner||'-', to:f.owner||'-' });
     if (changes.length) {
-      events.push({ type:'updated', id:p.id, name:p.name, status:p.status, ts:Date.now(), changes });
+      events.push({ type:'updated', id:p.id, name:p.name, status:p.status, ts:Date.now(), changes, user:_actorName() });
     }
   });
   (prev||[]).forEach(p => {
     if (!currMap[p.id]) {
-      events.push({ type:'deleted', id:p.id, name:p.name, ts:Date.now(), change:'ถูกลบ' });
+      events.push({ type:'deleted', id:p.id, name:p.name, ts:Date.now(), change:'ถูกลบ', user:_actorName() });
     }
   });
   return events;
@@ -2916,11 +2915,13 @@ function renderLiveTracking() {
     } else if (ev.changes) {
       change = ev.changes.map(c => `<b>${c.field}</b>: ${c.from} → ${c.to}`).join(' · ');
     }
+    const userTag = ev.user ? `<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(59,114,240,.12);color:var(--accent);font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;margin-top:3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>${_esc(ev.user)}</span>` : '';
     return `<div class="lt-feed-item ${ev.type==='created'?'created':ev.type==='deleted'?'deleted':'status-'+ev.status}">
       <div class="lt-feed-icon">${icon}</div>
       <div class="lt-feed-body">
         <div class="lt-feed-name">${_esc(ev.name||'(ไม่ระบุชื่อ)')}</div>
         <div class="lt-feed-change">${change}</div>
+        ${userTag}
       </div>
       <div class="lt-feed-time">${_timeAgo(ev.ts)}</div>
     </div>`;
@@ -3034,7 +3035,7 @@ function updateDashboard() {
   const remPct   = tb>0?Math.round((tb-totalSpent)/tb*100):100;
 
   document.getElementById('m-total').textContent = fp.length;
-  document.getElementById('m-total-sub').textContent = `${S_KEYS.length} ยุทธศาสตร์`;
+  document.getElementById('m-total-sub').textContent = `4 ยุทธศาสตร์ + งบสำนักงาน`;
   document.getElementById('m-budget').textContent = fmt(tb);
   document.getElementById('m-spent').textContent  = fmt(totalSpent);
   document.getElementById('m-spent-sub').textContent = `คิดเป็น ${spentPct}% ของงบรวม`;
@@ -3085,7 +3086,7 @@ function renderBudgetBar(fp, tb, ts, tp, rem) {
 
 function renderStrategyCards(fp) {
   const el = document.getElementById('strategy-summary');
-  el.innerHTML = S_KEYS.map(s => {
+  el.innerHTML = [1,2,3,4,5].map(s => {
     const ps = fp.filter(p=>p.strategy==s);
     const budget = ps.reduce((a,p)=>a+(p.budget||0),0);
     const spent  = ps.reduce((a,p)=>a+(p.spent||0),0);
@@ -3096,9 +3097,12 @@ function renderStrategyCards(fp) {
     const prog = ps.filter(p=>p.status==='progress').length;
     const pend = ps.filter(p=>p.status==='pending').length;
     const barColor = pct>=90?'var(--red)': pct>=70?'var(--amber)': S_COLORS[s];
-    return `<div class="strategy-card" onclick="goToStrategy('${s}')" title="คลิกเพื่อดูโครงการในยุทธศาสตร์นี้">
+    const isOffice = s === 5;
+    const divider = isOffice ? `<div style="border-top:1.5px dashed var(--border2);margin:4px 0 4px;opacity:.7"></div>` : '';
+    const cardStyle = isOffice ? 'background:linear-gradient(135deg,var(--s5-light),#e0f7fa);border-color:#7ed9e8;' : '';
+    return `${divider}<div class="strategy-card" onclick="goToStrategy('${s}')" title="คลิกเพื่อดูโครงการ${isOffice?'งบบริหารสำนักงาน':'ในยุทธศาสตร์นี้'}" style="${cardStyle}">
       <div class="strategy-card-left">
-        <div class="strategy-card-name"><span class="badge ${S_BADGE[s]}">${S_NAMES[s]}</span> <span style="font-weight:500;font-size:12px;color:var(--text2)">${S_FULL[s]}</span></div>
+        <div class="strategy-card-name"><span class="badge ${S_BADGE[s]}">${S_NAMES[s]}</span> <span style="font-weight:500;font-size:12px;color:var(--text2)">${S_FULL[s]}</span>${isOffice?` <span style="font-size:10px;background:var(--s5-light);color:var(--s5);padding:1px 7px;border-radius:99px;font-weight:700;margin-left:4px">ไม่นับรวมยุทธศาสตร์</span>`:''}</div>
         <div class="strategy-card-sub">${ps.length} โครงการ · งบอนุมัติ <strong>${fmt(budget)}</strong> บาท · คงเหลือ <strong style="color:${remaining<0?'var(--red)':'var(--green)'}">${fmt(remaining)}</strong> บาท</div>
         <div class="strategy-progress-wrap">
           <div class="progress-track"><div class="progress-fill" style="width:${Math.min(Math.max(pct,.5),100)}%;background:${barColor};transition:width .5s"></div></div>
@@ -3261,12 +3265,14 @@ function renderCharts(fp) {
 function totalBudget(fp){ return fp.reduce((a,p)=>a+(p.budget||0),0); }
 
 function renderUtilizationChart(fp) {
-  const labels    = S_KEYS.map(s=>S_NAMES[s].replace('ยุทธศาสตร์ที่ ','ย.'));
-  const budgets   = S_KEYS.map(s=>fp.filter(p=>p.strategy==s).reduce((a,p)=>a+(p.budget||0),0));
-  const spents    = S_KEYS.map(s=>fp.filter(p=>p.strategy==s).reduce((a,p)=>a+(p.spent||0),0));
-  const pos       = S_KEYS.map(s=>fp.filter(p=>p.strategy==s).reduce((a,p)=>a+(p.po||0),0));
-  const remainings= S_KEYS.map((s,i)=>Math.max(budgets[i]-spents[i]-pos[i],0));
-  const spentPOs  = S_KEYS.map((s,i)=>spents[i]+pos[i]);
+  // แสดงเฉพาะ 4 ยุทธศาสตร์ในแผนภูมิ (strategy 5 = งบบริหารสำนักงาน แสดงแยก)
+  const chartKeys = [1,2,3,4,5];
+  const labels    = chartKeys.map(s => s===5 ? 'งบสำนักงาน' : S_NAMES[s].replace('ยุทธศาสตร์ที่ ','ย.'));
+  const budgets   = chartKeys.map(s=>fp.filter(p=>p.strategy==s).reduce((a,p)=>a+(p.budget||0),0));
+  const spents    = chartKeys.map(s=>fp.filter(p=>p.strategy==s).reduce((a,p)=>a+(p.spent||0),0));
+  const pos       = chartKeys.map(s=>fp.filter(p=>p.strategy==s).reduce((a,p)=>a+(p.po||0),0));
+  const remainings= chartKeys.map((s,i)=>Math.max(budgets[i]-spents[i]-pos[i],0));
+  const spentPOs  = chartKeys.map((s,i)=>spents[i]+pos[i]);
   const chartFont = { family:"'Sarabun', sans-serif", size:11 };
 
   const old = document.getElementById('chartUtilization');
@@ -3330,8 +3336,12 @@ function renderUtilizationChart(fp) {
 
 function renderSummaryTable(fp) {
   const el = document.getElementById('summaryTableBody'); if(!el) return;
-  const rows = S_KEYS.map(s=>{
-    const ps = fp.filter(p=>p.strategy==s);
+  // แสดงเฉพาะ 4 ยุทธศาสตร์ (1-4) ไม่รวมงบบริหารสำนักงาน (5)
+  const strategyKeys = [1,2,3,4];
+  const strategyProjects = fp.filter(p => strategyKeys.includes(Number(p.strategy)));
+  const officeProjects   = fp.filter(p => Number(p.strategy) === 5);
+
+  const makeRow = (s, ps, isOffice) => {
     const budget = ps.reduce((a,p)=>a+(p.budget||0),0);
     const spent  = ps.reduce((a,p)=>a+(p.spent||0),0);
     const po     = ps.reduce((a,p)=>a+(p.po||0),0);
@@ -3340,7 +3350,8 @@ function renderSummaryTable(fp) {
     const done=ps.filter(p=>p.status==='done').length;
     const prog=ps.filter(p=>p.status==='progress').length;
     const pend=ps.filter(p=>p.status==='pending').length;
-    return `<tr>
+    const rowStyle = isOffice ? 'background:var(--s5-light);border-top:2px solid var(--border2)' : '';
+    return `<tr style="${rowStyle}">
       <td><span class="badge ${S_BADGE[s]}">${S_NAMES[s]}</span><div style="font-size:11px;color:var(--text3);margin-top:2px">${S_FULL[s]}</div></td>
       <td style="text-align:center">${ps.length}</td>
       <td class="td-num">${fmtFull(budget)}</td>
@@ -3361,32 +3372,68 @@ function renderSummaryTable(fp) {
         <span style="color:var(--text3)">○${pend}</span>
       </td>
     </tr>`;
-  });
-  // Total
+  };
+
+  const rows = strategyKeys.map(s => makeRow(s, fp.filter(p=>p.strategy==s), false));
+
+  // แถวรวม 4 ยุทธศาสตร์
+  const sBudget = strategyProjects.reduce((a,p)=>a+(p.budget||0),0);
+  const sSpent  = strategyProjects.reduce((a,p)=>a+(p.spent||0),0);
+  const sPo     = strategyProjects.reduce((a,p)=>a+(p.po||0),0);
+  const sRem    = sBudget-sSpent-sPo;
+  const sPct    = sBudget>0?Math.round((sSpent+sPo)/sBudget*100):0;
+  rows.push(`<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border2)">
+    <td>รวม 4 ยุทธศาสตร์</td>
+    <td style="text-align:center">${strategyProjects.length}</td>
+    <td class="td-num">${fmtFull(sBudget)}</td>
+    <td class="td-num">${fmtFull(sSpent)}</td>
+    <td class="td-num">${fmtFull(sPo)}</td>
+    <td class="td-num" style="${sRem<0?'color:var(--red)':''}">${fmtFull(sRem)}</td>
+    <td>
+      <div style="display:flex;align-items:center;gap:7px">
+        <div style="flex:1;height:5px;background:var(--border2);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(sPct,100)}%;background:var(--accent);border-radius:99px"></div>
+        </div>
+        <span style="font-size:11px;color:var(--text2);min-width:30px;text-align:right">${sPct}%</span>
+      </div>
+    </td>
+    <td style="text-align:center;font-size:12px">
+      <span style="color:var(--green);margin-right:4px">✅${strategyProjects.filter(p=>p.status==='done').length}</span>
+      <span style="color:var(--accent);margin-right:4px">⏳${strategyProjects.filter(p=>p.status==='progress').length}</span>
+      <span style="color:var(--text3)">○${strategyProjects.filter(p=>p.status==='pending').length}</span>
+    </td>
+  </tr>`);
+
+  // แถวงบบริหารสำนักงาน (แยกต่างหาก)
+  if (officeProjects.length > 0) {
+    rows.push(makeRow(5, officeProjects, true));
+  }
+
+  // แถวรวมทั้งหมด (รวมงบบริหารสำนักงานด้วย)
   const tb = fp.reduce((a,p)=>a+(p.budget||0),0);
   const ts = fp.reduce((a,p)=>a+(p.spent||0),0);
   const tp = fp.reduce((a,p)=>a+(p.po||0),0);
   const tr2 = tb-ts-tp;
   const tpct = tb>0?Math.round((ts+tp)/tb*100):0;
-  rows.push(`<tr style="background:var(--surface2);font-weight:700">
-    <td>รวมทั้งหมด (${S_KEYS.length} ยุทธศาสตร์)</td>
-    <td style="text-align:center">${fp.length}</td>
-    <td class="td-num">${fmtFull(tb)}</td>
-    <td class="td-num">${fmtFull(ts)}</td>
-    <td class="td-num">${fmtFull(tp)}</td>
-    <td class="td-num" style="${tr2<0?'color:var(--red)':''}">${fmtFull(tr2)}</td>
+  rows.push(`<tr style="background:#1c2333;color:#fff;font-weight:700">
+    <td style="color:#fff">รวมทั้งหมด (4 ยุทธศาสตร์ + งบสำนักงาน)</td>
+    <td style="text-align:center;color:#fff">${fp.length}</td>
+    <td class="td-num" style="color:#fff">${fmtFull(tb)}</td>
+    <td class="td-num" style="color:#fff">${fmtFull(ts)}</td>
+    <td class="td-num" style="color:#fff">${fmtFull(tp)}</td>
+    <td class="td-num" style="${tr2<0?'color:#fca5a5':'color:#fff'}">${fmtFull(tr2)}</td>
     <td>
       <div style="display:flex;align-items:center;gap:7px">
-        <div style="flex:1;height:5px;background:var(--border2);border-radius:99px;overflow:hidden">
-          <div style="height:100%;width:${Math.min(tpct,100)}%;background:var(--accent);border-radius:99px"></div>
+        <div style="flex:1;height:5px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(tpct,100)}%;background:#60a5fa;border-radius:99px"></div>
         </div>
-        <span style="font-size:11px;color:var(--text2);min-width:30px;text-align:right">${tpct}%</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.8);min-width:30px;text-align:right">${tpct}%</span>
       </div>
     </td>
     <td style="text-align:center;font-size:12px">
-      <span style="color:var(--green);margin-right:4px">✅${fp.filter(p=>p.status==='done').length}</span>
-      <span style="color:var(--accent);margin-right:4px">⏳${fp.filter(p=>p.status==='progress').length}</span>
-      <span style="color:var(--text3)">○${fp.filter(p=>p.status==='pending').length}</span>
+      <span style="color:#6ee7b7;margin-right:4px">✅${fp.filter(p=>p.status==='done').length}</span>
+      <span style="color:#93c5fd;margin-right:4px">⏳${fp.filter(p=>p.status==='progress').length}</span>
+      <span style="color:rgba(255,255,255,.5)">○${fp.filter(p=>p.status==='pending').length}</span>
     </td>
   </tr>`);
   el.innerHTML = rows.join('');
@@ -4056,7 +4103,8 @@ function _comStats(fp) {
     map[c.key] = { projects: [], budget: 0, spent: 0, po: 0, done: 0, progress: 0, pending: 0 };
   });
 
-  fp.forEach(p => {
+  // กรองงบบริหารสำนักงาน (strategy 5) ออก — ไม่อยู่ในระบบอนุกรรมการ
+  fp.filter(p => String(p.strategy) !== '5').forEach(p => {
     const coms = _getCommittees(p);
     const targets = coms.length > 0 ? coms : [COM_UNASSIGNED.key];
     // โครงการ 1 โครงการอาจอยู่ในหลายอนุกรรมการ — นับโครงการซ้ำได้ แต่งบประมาณ pro-rate
@@ -4081,7 +4129,8 @@ function renderCommitteeSection(fp) {
   if (qEl) qEl.textContent = Q_LABEL[currentQuarter] + ' · ปีงบประมาณ พ.ศ. 2569';
 
   const map = _comStats(fp);
-  const totalBudget = fp.reduce((a, p) => a + (p.budget || 0), 0);
+  // สัดส่วนงบเทียบเฉพาะ 4 ยุทธศาสตร์ (ไม่รวมงบบริหารสำนักงาน strategy 5)
+  const totalBudget = fp.filter(p => String(p.strategy) !== '5').reduce((a, p) => a + (p.budget || 0), 0);
 
   // ── Metric cards ──
   const metricsEl = document.getElementById('committeeMetrics');
@@ -4152,13 +4201,14 @@ function renderCommitteeSection(fp) {
     </tr>`;
   }).filter(Boolean);
 
-  // Total row
+  // Total row — ไม่รวมงบบริหารสำนักงาน (strategy 5)
+  const strategyFp = fp.filter(p => String(p.strategy) !== '5');
   const totBudget  = allComs.reduce((a, c) => a + map[c.key].budget, 0);
   const totSpent   = allComs.reduce((a, c) => a + map[c.key].spent, 0);
   const totPo      = allComs.reduce((a, c) => a + map[c.key].po, 0);
   const totRem     = totBudget - totSpent - totPo;
   const totPct     = totBudget > 0 ? Math.round((totSpent + totPo) / totBudget * 100) : 0;
-  const totProj    = fp.length;
+  const totProj    = strategyFp.length;
   rows.push(`<tr style="background:var(--surface2);font-weight:700">
     <td>รวมทั้งหมด (${COM_LIST.length} อนุกรรมการ)</td>
     <td style="text-align:center">${totProj}</td>
@@ -4175,9 +4225,9 @@ function renderCommitteeSection(fp) {
       </div>
     </td>
     <td style="text-align:center;font-size:12px">
-      <span style="color:var(--green);margin-right:3px">✅${fp.filter(p=>p.status==='done').length}</span>
-      <span style="color:var(--accent);margin-right:3px">⏳${fp.filter(p=>p.status==='progress').length}</span>
-      <span style="color:var(--text3)">○${fp.filter(p=>p.status==='pending').length}</span>
+      <span style="color:var(--green);margin-right:3px">✅${strategyFp.filter(p=>p.status==='done').length}</span>
+      <span style="color:var(--accent);margin-right:3px">⏳${strategyFp.filter(p=>p.status==='progress').length}</span>
+      <span style="color:var(--text3)">○${strategyFp.filter(p=>p.status==='pending').length}</span>
     </td>
   </tr>`);
 
