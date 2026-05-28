@@ -1616,7 +1616,7 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
             <code>https://script.google.com/macros/s/<strong>[DEPLOYMENT_ID]</strong>/exec</code>
           </div>
           <div class="gs-row">
-            <input type="text" id="gasUrlInput" class="form-input" placeholder="https://script.google.com/macros/s/AKfycbxNAEkbLCeShiQ9Jyd_rJDRCqoGBYQpSYThxrCAFv1CHdtfKb_F2wY93aMUVzQuqLukYw/exec" style="max-width:520px">
+            <input type="text" id="gasUrlInput" class="form-input" placeholder="https://script.google.com/macros/s/AKfycbyRcki6onOZe5y0fc71LCgIit5XPSL-0txgIPfyF3d9atytaf_GbU9Onx2CmQCxzlX7ZA/exec" style="max-width:520px">
             <button class="btn btn-primary btn-sm" onclick="applyGasUrl()">✔ ตั้งค่า URL</button>
           </div>
           <div id="gasUrlStatus" style="margin-top:8px;font-size:12px;color:var(--text3)">สถานะ: ยังไม่ได้ตั้งค่า GAS URL</div>
@@ -2686,7 +2686,8 @@ async function authRegister() {
   btn.disabled = true; btn.textContent = '⏳ กำลังสมัคร...';
   const hash = _hashSimple(pass);
 
-  // ── ลอง GAS ก่อน ──
+  // ── ลอง GAS ก่อน (ถ้าเชื่อมต่ออยู่) ──
+  let gasBlockedDuplicate = false;
   if (_gasReady()) {
     try {
       const res = await _gasAuthCall({ action: 'registerUser', name, email, passwordHash: hash, createdAt: new Date().toISOString() });
@@ -2697,27 +2698,31 @@ async function authRegister() {
         showToast(`🎉 สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ ${name}`, 3000);
         btn.disabled = false; btn.textContent = 'สมัครสมาชิก';
         return;
-      } else {
-        errEl.textContent = '❌ ' + (res.message || 'สมัครสมาชิกไม่สำเร็จ');
-        if (res.message && res.message.includes('Unknown GET action')) {
-           errEl.innerHTML += '<br><small style="font-weight:normal">กรุณาอัปเดตโค้ดใน Google Apps Script และ Deploy เป็นเวอร์ชันใหม่ (New Deployment)</small>';
-        }
+      } else if (res.message && (res.message.includes('ถูกใช้งานแล้ว') || res.message.includes('duplicate') || res.message.includes('already'))) {
+        // อีเมลซ้ำใน GAS → ห้าม fallback ไป Local
+        gasBlockedDuplicate = true;
+        errEl.textContent = '❌ ' + res.message;
         errEl.classList.add('show');
         btn.disabled = false; btn.textContent = 'สมัครสมาชิก';
         return;
+      } else {
+        // GAS ตอบ error อื่น (เช่น Unknown action, GAS เก่า) → ตกไป Local
+        console.warn('GAS register failed, fallback to local:', res.message);
       }
     } catch(e) {
       console.error('GAS Register Error:', e);
-      // ถ้าเกิด error จาก network หรือ timeout ให้ลอง local
+      // network error / timeout → ตกไป Local
     }
   }
 
   // ── Fallback: Local users ──
+  // (ใช้เมื่อ GAS ไม่พร้อม, timeout, หรือ GAS version เก่าไม่รองรับ registerUser)
   const localRes = _localRegister(name, email, hash);
   if (localRes.success) {
     _setLoggedIn({ id: localRes.user.id, name, email, isGuest: false });
     closeAuthModal();
-    showToast(`🎉 สมัครสมาชิกสำเร็จ! (โหมด Local) ยินดีต้อนรับ ${name}`, 3000);
+    const modeNote = _gasReady() ? ' (บันทึกในเครื่อง — GAS ยังไม่รองรับ registerUser ผ่าน GET)' : ' (โหมด Local)';
+    showToast(`🎉 สมัครสมาชิกสำเร็จ!${modeNote} ยินดีต้อนรับ ${name}`, 3500);
   } else {
     errEl.textContent = localRes.message || 'สมัครสมาชิกไม่สำเร็จ';
     errEl.classList.add('show');
@@ -4467,7 +4472,7 @@ function renderCommitteeChart(fp) {
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
 // ⚠️ สำคัญ: เปลี่ยน URL ด้านล่างนี้ให้เป็น URL ของคุณเองที่ได้จากการ Deploy Google Apps Script
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNAEkbLCeShiQ9Jyd_rJDRCqoGBYQpSYThxrCAFv1CHdtfKb_F2wY93aMUVzQuqLukYw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyRcki6onOZe5y0fc71LCgIit5XPSL-0txgIPfyF3d9atytaf_GbU9Onx2CmQCxzlX7ZA/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
