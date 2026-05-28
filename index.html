@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบรายงานผลการดำเนินงานโครงการ พ.ศ. 2569 | มูลนิธิการศึกษาทางไกลผ่านดาวเทียม</title>
+<title>ระบบรายงานผลการดำเนินงานโครงการ พ.ศ. 2569 | มูลนิธิการศึกษาทางไกลผ่านดาวเทียม ในพระบรมราชูปถัมภ์</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1616,7 +1616,7 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
             <code>https://script.google.com/macros/s/<strong>[DEPLOYMENT_ID]</strong>/exec</code>
           </div>
           <div class="gs-row">
-            <input type="text" id="gasUrlInput" class="form-input" placeholder="https://script.google.com/macros/s/AKfycbyRcki6onOZe5y0fc71LCgIit5XPSL-0txgIPfyF3d9atytaf_GbU9Onx2CmQCxzlX7ZA/exec" style="max-width:520px">
+            <input type="text" id="gasUrlInput" class="form-input" placeholder="https://script.google.com/macros/s/AKfycbw8KdGbpBMCt-8Cp8g2lcEA3rXSXeEWqzfxzjSxAfTv2rmOV2pA7bx_wCyeEbrHobJ3WQ/exec" style="max-width:520px">
             <button class="btn btn-primary btn-sm" onclick="applyGasUrl()">✔ ตั้งค่า URL</button>
           </div>
           <div id="gasUrlStatus" style="margin-top:8px;font-size:12px;color:var(--text3)">สถานะ: ยังไม่ได้ตั้งค่า GAS URL</div>
@@ -2591,6 +2591,19 @@ function _localUsers() {
 function _saveLocalUsers(users) {
   try { localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users)); } catch(e){}
 }
+// อัปเดต local cache หลัง login สำเร็จผ่าน GAS (เพื่อให'อ offline fallback ทำงานได้)
+function _localSyncUser(user) {
+  try {
+    const users = _localUsers();
+    const idx = users.findIndex(u => u.email === user.email);
+    if (idx >= 0) {
+      users[idx] = { ...users[idx], ...user };
+    } else {
+      users.push({ ...user, createdAt: new Date().toISOString() });
+    }
+    _saveLocalUsers(users);
+  } catch(e) {}
+}
 function _localLogin(email, passwordHash) {
   const users = _localUsers();
   const u = users.find(u => u.email === email && u.passwordHash === passwordHash);
@@ -2638,31 +2651,42 @@ async function authLogin() {
   btn.disabled = true; btn.textContent = '⏳ กำลังตรวจสอบ...';
   const hash = _hashSimple(pass);
 
-  // ── ลอง GAS ก่อน ──
+  // ── ลอง GAS ก่อนเสมอ (ข้อมูลสมาชิกเก็บใน Google Sheet เป็นหลัก) ──
   if (_gasReady()) {
     try {
       const res = await _gasAuthCall({ action: 'loginUser', email, passwordHash: hash });
       if (res.success) {
+        // Login สำเร็จผ่าน GAS → บันทึก user ลง local cache ด้วย (เพื่อ offline fallback)
+        _localSyncUser({ id: res.user.id, name: res.user.name, email: res.user.email, passwordHash: hash });
         _setLoggedIn({ id: res.user.id, name: res.user.name, email: res.user.email, isGuest: false });
         closeAuthModal();
         showToast(`✅ ยินดีต้อนรับ ${res.user.name}!`, 2500);
         btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
         return;
+      } else {
+        // GAS ตอบ "รหัสผิด" → หยุดที่นี่เลย ไม่ fallback ไป Local
+        // (ป้องกันบัญชี Local เก่าที่ค้างอยู่ bypass GAS auth)
+        errEl.textContent = res.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+        errEl.classList.add('show');
+        btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+        return;
       }
-      // GAS ตอบกลับแต่ login ไม่ผ่าน → ลอง local ด้วย
     } catch(e) {
-      // GAS ใช้งานไม่ได้ → ตกไป local
+      // GAS ใช้งานไม่ได้ (network error / timeout) → fallback ไป Local cache
+      console.warn('GAS login unavailable, trying local cache:', e.message);
     }
   }
 
-  // ── Fallback: Local users ──
+  // ── Fallback: Local cache (ใช้เฉพาะเมื่อ GAS ไม่พร้อม เช่น offline / GAS ล่ม) ──
   const localRes = _localLogin(email, hash);
   if (localRes.success) {
     _setLoggedIn({ id: localRes.user.id, name: localRes.user.name, email: localRes.user.email, isGuest: false });
     closeAuthModal();
-    showToast(`✅ ยินดีต้อนรับ ${localRes.user.name}! (โหมด Local)`, 2500);
+    showToast(`✅ ยินดีต้อนรับ ${localRes.user.name}! ⚠️ (ใช้ข้อมูลแคชในเครื่อง — GAS ไม่พร้อมใช้งาน)`, 3500);
   } else {
-    errEl.textContent = localRes.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+    errEl.textContent = _gasReady()
+      ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'
+      : 'ไม่สามารถเชื่อมต่อกับระบบได้ กรุณาลองใหม่อีกครั้ง';
     errEl.classList.add('show');
   }
   btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
@@ -2716,13 +2740,25 @@ async function authRegister() {
   }
 
   // ── Fallback: Local users ──
-  // (ใช้เมื่อ GAS ไม่พร้อม, timeout, หรือ GAS version เก่าไม่รองรับ registerUser)
+  // ⚠️ ใช้เฉพาะเมื่อ GAS ไม่พร้อม — บัญชี Local จะ login ได้เฉพาะเครื่องนี้เท่านั้น
+  // หาก GAS พร้อมแต่ยังตกมาที่นี่ = GAS version เก่า ต้อง Deploy ใหม่
   const localRes = _localRegister(name, email, hash);
   if (localRes.success) {
     _setLoggedIn({ id: localRes.user.id, name, email, isGuest: false });
     closeAuthModal();
-    const modeNote = _gasReady() ? ' (บันทึกในเครื่อง — GAS ยังไม่รองรับ registerUser ผ่าน GET)' : ' (โหมด Local)';
-    showToast(`🎉 สมัครสมาชิกสำเร็จ!${modeNote} ยินดีต้อนรับ ${name}`, 3500);
+    if (_gasReady()) {
+      // GAS เชื่อมต่อได้แต่ไม่รองรับการสมัคร → แจ้งให้ผู้ดูแลอัปเดต GAS
+      showToast('🎉 สมัครสำเร็จ (เฉพาะเครื่องนี้) ⚠️ กรุณาแจ้งผู้ดูแลระบบ Deploy GAS เวอร์ชันใหม่', 5000);
+      // แสดง error เพิ่มในช่อง register
+      const warnEl = document.getElementById('registerError');
+      if (warnEl) {
+        warnEl.style.background = '#fff8e6'; warnEl.style.borderColor = '#f6cc70'; warnEl.style.color = '#92400e';
+        warnEl.innerHTML = '⚠️ บัญชีนี้บันทึกเฉพาะในเครื่องนี้เท่านั้น เครื่องอื่นจะ login ไม่ได้<br><small>กรุณาแจ้งผู้ดูแลระบบ: Deploy Google Apps Script เวอร์ชันใหม่</small>';
+        warnEl.classList.add('show');
+      }
+    } else {
+      showToast(`🎉 สมัครสมาชิกสำเร็จ! (ยังไม่ได้เชื่อม GAS — login ได้เฉพาะเครื่องนี้) ยินดีต้อนรับ ${name}`, 4000);
+    }
   } else {
     errEl.textContent = localRes.message || 'สมัครสมาชิกไม่สำเร็จ';
     errEl.classList.add('show');
@@ -4472,7 +4508,7 @@ function renderCommitteeChart(fp) {
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
 // ⚠️ สำคัญ: เปลี่ยน URL ด้านล่างนี้ให้เป็น URL ของคุณเองที่ได้จากการ Deploy Google Apps Script
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyRcki6onOZe5y0fc71LCgIit5XPSL-0txgIPfyF3d9atytaf_GbU9Onx2CmQCxzlX7ZA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw8KdGbpBMCt-8Cp8g2lcEA3rXSXeEWqzfxzjSxAfTv2rmOV2pA7bx_wCyeEbrHobJ3WQ/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
