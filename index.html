@@ -2555,28 +2555,35 @@ function gasReady() {
 
 function gasAuthCall(params) {
   return new Promise((resolve, reject) => {
+    if (!gasReady()) {
+      reject(new Error('GAS URL ยังไม่พร้อม'));
+      return;
+    }
+
     const cbName = 'authCb_' + Date.now() + '_' + Math.floor(Math.random() * 9999);
     const timeout = setTimeout(() => {
-      delete window[cbName];
-      if (script.parentNode) script.remove();
-      reject(new Error('timeout'));
+      cleanup();
+      reject(new Error('GAS timeout'));
     }, 15000);
 
-    window[cbName] = function (data) {
+    function cleanup() {
       clearTimeout(timeout);
-      delete window[cbName];
-      if (script.parentNode) script.remove();
+      try { delete window[cbName]; } catch (e) {}
+      if (script && script.parentNode) script.remove();
+    }
+
+    window[cbName] = function (data) {
+      cleanup();
       resolve(data);
     };
 
-    const p = new URLSearchParams({ ...params, callback: cbName });
     const script = document.createElement('script');
+    const p = new URLSearchParams({ ...params, callback: cbName });
     script.src = gasUrl.replace(/\/exec.*$/, '/exec') + '?' + p.toString();
-    script.onerror = () => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      if (script.parentNode) script.remove();
-      reject(new Error('network error'));
+
+    script.onerror = function () {
+      cleanup();
+      reject(new Error('โหลด GAS ไม่ได้'));
     };
     document.head.appendChild(script);
   });
@@ -2625,34 +2632,38 @@ function _localChangePassword(email, tempHash, newHash) {
   return { success: true };
 }
 
-async function authLogin() {
-  const email = (document.getElementById('loginEmail').value || '').trim().toLowerCase();
-  const pass  = document.getElementById('loginPassword').value || '';
-  const errEl = document.getElementById('loginError');
-  const btn   = document.getElementById('loginSubmitBtn');
-  errEl.classList.remove('show');
+async function authRegister() {
+  const btn = document.getElementById('registerSubmitBtn');
+  const errEl = document.getElementById('registerError');
+  try {
+    errEl.classList.remove('show');
+    btn.disabled = true;
+    btn.textContent = 'กำลังสมัคร...';
 
-  if (!email || !pass) { errEl.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน'; errEl.classList.add('show'); return; }
+    const res = await gasAuthCall({
+      action: 'registerUser',
+      name,
+      email,
+      passwordHash: hash,
+      createdAt: new Date().toISOString()
+    });
 
-  btn.disabled = true; btn.textContent = '⏳ กำลังตรวจสอบ...';
-  const hash = _hashSimple(pass);
-
-  // ── ลอง GAS ก่อน ──
-  if (_gasReady()) {
-    try {
-      const res = await _gasAuthCall({ action: 'loginUser', email, passwordHash: hash });
-      if (res.success) {
-        _setLoggedIn({ id: res.user.id, name: res.user.name, email: res.user.email, isGuest: false });
-        closeAuthModal();
-        showToast(`✅ ยินดีต้อนรับ ${res.user.name}!`, 2500);
-        btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
-        return;
-      }
-      // GAS ตอบกลับแต่ login ไม่ผ่าน → ลอง local ด้วย
-    } catch(e) {
-      // GAS ใช้งานไม่ได้ → ตกไป local
+    if (res && res.success) {
+      setLoggedIn({ id: res.user.id, name, email, isGuest: false });
+      closeAuthModal();
+      showToast('สมัครสมาชิกสำเร็จ', 2500);
+    } else {
+      errEl.textContent = (res && res.message) ? res.message : 'สมัครไม่สำเร็จ';
+      errEl.classList.add('show');
     }
+  } catch (e) {
+    errEl.textContent = e.message || 'เชื่อมต่อ GAS ไม่ได้';
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'สมัครสมาชิก';
   }
+}
 
   // ── Fallback: Local users ──
   const localRes = _localLogin(email, hash);
