@@ -4413,7 +4413,7 @@ function renderCommitteeChart(fp) {
 // ===== GOOGLE SHEETS =====
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyeTQiCQwuVSofwxW1AxCVaU1zTpryuN-wpb61t2P6PeFd79Qtr3qs8QfmMhNKgjnRj3A/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHSLyytBTYw21lYfTiAM_HsvVJIhMEoo5xnhqtei55yh705DDjLqJea675xkNn3IrOZA/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
@@ -4519,12 +4519,16 @@ function doGet(e) {
   const cb     = e.parameter.callback; // JSONP callback
   let result;
 
-  if (action === 'getAll')            result = getAll();
-  else if (action === 'loginUser')    result = loginUser(e.parameter);
-  else if (action === 'registerUser') result = registerUser(e.parameter);
-  else if (action === 'resetPassword')   result = resetPassword(e.parameter);
-  else if (action === 'changePassword')  result = changePassword(e.parameter);
-  else result = { success: false, message: 'Unknown GET action: ' + action };
+  try {
+    if (action === 'getAll')            result = getAll();
+    else if (action === 'loginUser')    result = loginUser(e.parameter);
+    else if (action === 'registerUser') result = registerUser(e.parameter);
+    else if (action === 'resetPassword')   result = resetPassword(e.parameter);
+    else if (action === 'changePassword')  result = changePassword(e.parameter);
+    else result = { success: false, message: 'Unknown GET action: ' + action };
+  } catch (err) {
+    result = { success: false, message: 'Error: ' + err.message };
+  }
 
   const json = JSON.stringify(result);
   if (cb) {
@@ -4560,8 +4564,9 @@ function getUserSheet() {
   let sheet = ss.getSheetByName('Users');
   if (!sheet) {
     sheet = ss.insertSheet('Users');
-    sheet.appendRow(['id', 'name', 'email', 'passwordHash', 'createdAt']);
-    sheet.getRange(1, 1, 1, 5)
+    // เพิ่มคอลัมน์ tempPasswordHash (คอลัมน์ที่ 5) เพื่อรองรับการลืมรหัสผ่าน
+    sheet.appendRow(['id', 'name', 'email', 'passwordHash', 'tempPasswordHash', 'createdAt']);
+    sheet.getRange(1, 1, 1, 6)
       .setBackground('#059669').setFontColor('#ffffff').setFontWeight('bold');
   }
   return sheet;
@@ -4662,7 +4667,8 @@ function registerUser(params) {
   }
 
   const id = 'u_' + Date.now();
-  sheet.appendRow([id, params.name, email, params.passwordHash, params.createdAt || new Date().toISOString()]);
+  // บันทึกข้อมูล 6 คอลัมน์ให้ตรงกับ Header (id, name, email, passwordHash, tempPasswordHash, createdAt)
+  sheet.appendRow([id, params.name, email, params.passwordHash, '', params.createdAt || new Date().toISOString()]);
   return { success: true, user: { id, name: params.name, email } };
 }
 
