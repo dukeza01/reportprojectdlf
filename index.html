@@ -3743,6 +3743,7 @@ function filterByCommittee(key){
 
 // ===== MODAL =====
 function openAdd(){
+  if(!_isEditable()){ showToast('🔒 กรุณาเข้าสู่ระบบก่อนเพิ่มโครงการ', 2500); return; }
   editingId=null; tempKPIs=[]; tempImages=[];
   document.getElementById('modalTitle').textContent='เพิ่มโครงการใหม่';
   ['editId','fName','fOwner'].forEach(id=>document.getElementById(id).value='');
@@ -3763,6 +3764,7 @@ function openAdd(){
 }
 
 function openEdit(id){
+  if(!_isEditable()){ showToast('🔒 กรุณาเข้าสู่ระบบก่อนแก้ไขโครงการ', 2500); return; }
   const p=projects.find(x=>x.id==id); if(!p) return;
   editingId=id; tempKPIs=[...(p.kpi||[])];
   // โหลดรูปเดิม — แต่ละรูปมี url และ driveId อยู่แล้ว ไม่ต้อง upload ซ้ำ
@@ -3796,6 +3798,7 @@ function openEdit(id){
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
 
 function saveProject(){
+  if(!_isEditable()){ showToast('🔒 กรุณาเข้าสู่ระบบก่อนบันทึกข้อมูล', 2500); return; }
   const name=document.getElementById('fName').value.trim();
   if(!name){alert('กรุณากรอกชื่อโครงการ');return;}
 
@@ -3892,7 +3895,9 @@ function renderKPIList(){
 function openDetail(id){
   const p=projects.find(x=>x.id==id); if(!p) return;
   document.getElementById('detailTitle').textContent=p.name;
-  document.getElementById('detailEditBtn').onclick=()=>openEdit(id);
+  const editBtn = document.getElementById('detailEditBtn');
+  editBtn.onclick=()=>openEdit(id);
+  editBtn.style.display = _isEditable() ? '' : 'none';
   const remaining=(p.budget||0)-(p.spent||0)-(p.po||0);
   const kpis=p.kpi||[];
   document.getElementById('detailBody').innerHTML=`
@@ -3989,6 +3994,7 @@ function openDetailImgLightbox(projectId, idx){
 
 // ===== DELETE =====
 function confirmDelete(id){
+  if(!_isEditable()){ showToast('🔒 กรุณาเข้าสู่ระบบก่อนลบโครงการ', 2500); return; }
   const p=projects.find(x=>x.id==id); if(!p) return;
   deleteId=id;
   document.getElementById('deleteName').textContent=p.name;
