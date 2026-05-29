@@ -1590,6 +1590,7 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
                   <th class="td-num">คงเหลือสุทธิ</th>
                   <th>สถานะ</th>
                   <th>ตัวชี้วัด</th>
+                  <th>ผู้แก้ไขล่าสุด</th>
                   <th style="width:88px">จัดการ</th>
                 </tr>
               </thead>
@@ -2023,6 +2024,16 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
         <div class="form-field full">
           <label class="form-label">แนวทางแก้ไข / ข้อเสนอแนะ</label>
           <textarea id="fSolutions" class="form-textarea" rows="2" placeholder="ระบุแนวทางแก้ไข..."></textarea>
+        </div>
+        <div class="form-field full"><div class="form-section">✏️ ข้อมูลผู้แก้ไข</div></div>
+        <div class="form-field">
+          <label class="form-label">ชื่อผู้แก้ไข / อัปเดตข้อมูล <span style="color:var(--red)">*</span></label>
+          <input type="text" id="fEditorName" class="form-input" placeholder="กรอกชื่อ-นามสกุลผู้แก้ไข">
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">ชื่อจะถูกบันทึกพร้อมวันเวลาอัตโนมัติ</div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">แก้ไขล่าสุด</label>
+          <input type="text" id="fEditedAt" class="form-input" placeholder="— ระบบบันทึกให้อัตโนมัติ —" readonly style="background:var(--surface2);color:var(--text3);cursor:default">
         </div>
         <div class="form-field full"><div class="form-section">📸 รูปภาพประกอบการดำเนินงาน</div></div>
         <div class="form-field full">
@@ -3611,7 +3622,7 @@ function renderTable() {
   const slice=filtered.slice(start,start+PAGE_SIZE);
   const tbody=document.getElementById('tableBody');
   if(!slice.length){
-    tbody.innerHTML=`<tr><td colspan="11"><div class="empty-state">
+    tbody.innerHTML=`<tr><td colspan="12"><div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <p>ไม่พบโครงการที่ค้นหา</p></div></td></tr>`;
   } else {
@@ -3650,6 +3661,17 @@ function renderTable() {
         <td><span class="badge ${STATUS_CLASS[p.status]}">${STATUS_LABEL[p.status]}</span></td>
         <td style="text-align:center">
           ${kpiCount>0?`<span class="badge badge-s1">${kpiCount} ตัวชี้วัด</span>`:'<span style="color:var(--text3);font-size:11px">—</span>'}
+        </td>
+        <td style="min-width:130px;max-width:170px">
+          ${p.lastEditedBy ? `
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:12px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:4px">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                ${p.lastEditedBy.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+              </span>
+              ${p.lastEditedAt?`<span style="font-size:10px;color:var(--text3)">${p.lastEditedAt}</span>`:''}
+            </div>
+          ` : '<span style="color:var(--text3);font-size:11px">—</span>'}
         </td>
         <td class="td-actions" onclick="event.stopPropagation()">
           <div class="td-actions-inner">
@@ -3690,7 +3712,7 @@ function renderTable() {
         </div>
       </td>
       <td class="td-num" style="font-weight:800;color:${fTotalRem<0?'var(--red)':'var(--text)'}">${fmtFull(fTotalRem)}</td>
-      <td colspan="3"></td>
+      <td colspan="4"></td>
     </tr>`;
   }
   document.getElementById('paginationInfo').textContent=`แสดง ${Math.min(start+1,total)}–${Math.min(start+PAGE_SIZE,total)} จากทั้งหมด ${total} โครงการ`;
@@ -3756,6 +3778,8 @@ function openAdd(){
   document.getElementById('fResult').value='';
   document.getElementById('fProblems').value='';
   document.getElementById('fSolutions').value='';
+  document.getElementById('fEditorName').value='';
+  document.getElementById('fEditedAt').value='';
   setComCheckboxes([]);
   document.getElementById('kpiInput').value='';
   renderKPIList(); renderImgPreview();
@@ -3789,6 +3813,8 @@ function openEdit(id){
   document.getElementById('fSolutions').value=p.solutions||'';
   document.getElementById('fOwner').value=p.owner||'';
   setComCheckboxes(p.committees||[]);
+  document.getElementById('fEditorName').value='';
+  document.getElementById('fEditedAt').value=p.lastEditedAt?(p.lastEditedAt+(p.lastEditedBy?' โดย '+p.lastEditedBy:'')):'— ยังไม่เคยแก้ไข —';
   document.getElementById('kpiInput').value='';
   renderKPIList(); renderImgPreview();
   document.getElementById('modalOverlay').classList.add('open');
@@ -3829,7 +3855,9 @@ function saveProject(){
     solutions:document.getElementById('fSolutions').value.trim(),
     owner:document.getElementById('fOwner').value.trim(),
     committees:getComCheckboxes(),
-    images: cleanImages
+    images: cleanImages,
+    lastEditedBy: (document.getElementById('fEditorName').value||'').trim(),
+    lastEditedAt: new Date().toLocaleString('th-TH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
   };
   const imgCount = cleanImages.length;
   const imgLabel = imgCount>0 ? ` · รูปภาพ ${imgCount} รูป (Cloudinary)` : '';
@@ -3956,6 +3984,19 @@ function openDetail(id){
               onerror="onImgError(this)">
           </div>`;
         }).join('')}
+      </div>
+    </div>`:''}
+    ${(p.lastEditedBy||p.lastEditedAt)?`
+    <div class="detail-section">
+      <div class="detail-section-title">✏️ ข้อมูลการแก้ไขล่าสุด</div>
+      <div style="display:flex;align-items:center;gap:12px;background:var(--accent-light);border:1px solid #bfcff8;border-radius:var(--radius);padding:.875rem 1rem">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(59,114,240,.3)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--accent)">${escapeHtml(p.lastEditedBy||'ไม่ระบุชื่อ')}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">🕐 แก้ไขเมื่อ ${escapeHtml(p.lastEditedAt||'')}</div>
+        </div>
       </div>
     </div>`:''}
   `;
