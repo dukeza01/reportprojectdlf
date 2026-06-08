@@ -1241,7 +1241,7 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
       <div class="nav-section">จัดการ</div>
       <button class="nav-item" onclick="showPage('livetracking')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
-        ติดตามสด <span style="margin-left:auto;background:#4ade80;width:8px;height:8px;border-radius:50%;animation:lt-pulse 1.8s infinite"></span>
+        ประวัติการแก้ไข <span style="margin-left:auto;background:#4ade80;width:8px;height:8px;border-radius:50%;animation:lt-pulse 1.8s infinite"></span>
       </button>
       <button class="nav-item" onclick="showPage('projects','')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -1314,6 +1314,7 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
             <div class="user-menu-header">
               <div class="user-menu-name" id="menuDisplayName">—</div>
               <div class="user-menu-email" id="menuEmail">—</div>
+            <div id="menuPosition" style="display:none;font-size:11px;color:#94a3b8;margin-top:2px;line-height:1.4;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
             </div>
             <button class="user-menu-item danger" onclick="authLogout()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1721,7 +1722,7 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
       <div id="page-livetracking" style="display:none">
         <div class="lt-header">
           <div>
-            <h2>📡 ติดตามสด · Live Tracking</h2>
+            <h2>📡 ประวัติการแก้ไข</h2>
             <div class="sub">ระบบติดตามผลการดำเนินงานแบบเรียลไทม์ · อัปเดตอัตโนมัติทุก <span id="ltIntervalLabel">30</span> วินาที</div>
           </div>
           <div class="lt-pulse">
@@ -1788,9 +1789,9 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
       <div class="auth-logo-title">ระบบรายงานผลการดำเนินงาน</div>
       <div class="auth-logo-sub">มูลนิธิการศึกษาทางไกลผ่านดาวเทียม · ปีงบประมาณ พ.ศ. 2569</div>
     </div>
-    <div class="auth-tabs">
+    <div class="auth-tabs" id="authTabsBar">
       <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">เข้าสู่ระบบ</button>
-      <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">ลงทะเบียนสมาชิก</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">ลงทะเบียน</button>
     </div>
 
     <!-- Login Form -->
@@ -1836,9 +1837,14 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
           <label class="auth-label">สังกัด <span style="color:var(--red)">*</span></label>
           <div style="position:relative">
             <select class="auth-input" id="fbRegDept" style="appearance:none;padding-right:32px;cursor:pointer">
-              <option value="" disabled selected>— เลือกสังกัด —</option>
-              <option value="สำนักงานมูลนิธิฯ">สำนักงานมูลนิธิฯ</option>
-              <option value="สถานีวิทยุฯ">สถานีวิทยุฯ</option>
+              <option value="">-- เลือกสังกัด --</option>
+              <option>สำนักงานมูลนิธิฯ</option>
+              <option>ฝ่ายเทคโนโลยีสารสนเทศ</option>
+              <option>ฝ่ายวิชาการ</option>
+              <option>ฝ่ายผลิตรายการ</option>
+              <option>ฝ่ายบริหารงานทั่วไป</option>
+              <option>ฝ่ายการเงินและบัญชี</option>
+              <option>อื่นๆ</option>
             </select>
             <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;font-size:12px">▾</span>
           </div>
@@ -2419,7 +2425,7 @@ function onQuarterChange() {
 }
 
 // ===== AUTH SYSTEM =====
-const AUTH_SESSION_KEY = 'dltv_auth_session';
+const AUTH_SESSION_KEY = 'dltv_auth_session_2569';
 
 let _currentUser = null; // null = ยังไม่ login, { id, name, email, isGuest } = login แล้ว
 
@@ -2452,22 +2458,23 @@ function togglePasswordVisibility(inputId) {
 function openAuthModal(tab) {
   switchAuthTab(tab || 'login');
   document.getElementById('authOverlay').classList.add('open');
-  setTimeout(()=>{
-    const el = document.getElementById(tab==='register' ? 'regName' : 'loginEmail');
-    if(el) el.focus();
+  setTimeout(() => {
+    const m = { login:'loginEmail', register:'fbRegName', forgot:'forgotEmail' };
+    const el = document.getElementById(m[tab] || 'loginEmail');
+    if (el) el.focus();
   }, 120);
 }
 function closeAuthModal() {
   document.getElementById('authOverlay').classList.remove('open');
 }
 function switchAuthTab(tab) {
-  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
-  document.getElementById('tabRegister').classList.toggle('active', tab==='register');
-  document.querySelector('.auth-tabs').style.display = tab==='forgot' ? 'none' : '';
-
-  document.getElementById('authLoginForm').style.display    = tab==='login'    ? 'flex' : 'none';
-  document.getElementById('authRegisterForm').style.display = tab==='register' ? 'flex' : 'none';
-  document.getElementById('authForgotForm').style.display   = tab==='forgot'   ? 'flex' : 'none';
+  const tabs = document.getElementById('authTabsBar');
+  if (tabs) tabs.style.display = (tab === 'forgot') ? 'none' : '';
+  document.getElementById('tabLogin')    && document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabRegister') && document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+  document.getElementById('authLoginForm').style.display    = tab === 'login'    ? 'flex' : 'none';
+  document.getElementById('authRegisterForm').style.display = tab === 'register' ? 'flex' : 'none';
+  document.getElementById('authForgotForm').style.display   = tab === 'forgot'   ? 'flex' : 'none';
 
   // reset forgot steps เสมอเมื่อเปิดหน้า forgot
   if (tab === 'forgot') {
@@ -2477,13 +2484,10 @@ function switchAuthTab(tab) {
     window._forgotEmail = '';
   }
 
-  ['loginError','registerError','forgotError','forgotStep2Error','forgotStep2Success'].forEach(id=>{
+  ['loginError','forgotError','forgotStep2Error','forgotStep2Success'].forEach(id => {
     const el = document.getElementById(id);
-    if(el) el.classList.remove('show');
+    if (el) el.classList.remove('show');
   });
-
-  const focusMap = { login:'loginEmail', register:'fbRegName', forgot:'forgotEmail' };
-  setTimeout(()=>{ const el=document.getElementById(focusMap[tab]); if(el) el.focus(); }, 120);
 }
 
 // Step 1 — ขอรหัสชั่วคราว
@@ -2590,7 +2594,7 @@ function authBackToStep1() {
 
 // ── ตรวจสอบว่า GAS พร้อมหรือยัง ──
 function _gasReady() {
-  return GAS_ENABLED && _gasUrl && !_gasUrl.includes('YOUR_GAS');
+  return typeof GAS_ENABLED !== 'undefined' && GAS_ENABLED && _gasUrl && !_gasUrl.includes('YOUR_GAS');
 }
 
 // ── เรียก GAS action ผ่าน GET (ใช้ JSONP pattern เพื่อหลีกเลี่ยง CORS) ──
@@ -2624,7 +2628,7 @@ function _gasAuthCall(params) {
 }
 
 // ── Local user storage (fallback เมื่อไม่มี GAS) ──────────────
-const LOCAL_USERS_KEY = 'dltv_local_users_v1';
+const LOCAL_USERS_KEY = 'dltv_local_users_2569';
 function _localUsers() {
   try { return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '[]'); } catch(e){ return []; }
 }
@@ -2647,16 +2651,16 @@ function _localSyncUser(user) {
 function _localLogin(email, passwordHash) {
   const users = _localUsers();
   const u = users.find(u => u.email === email && u.passwordHash === passwordHash);
-  if (u) return { success: true, user: { id: u.id, name: u.name, email: u.email } };
+  if (u) return { success: true, user: { id: u.id, name: u.name, email: u.email, position: u.position||'', dept: u.dept||'' } };
   return { success: false, message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' };
 }
-function _localRegister(name, email, passwordHash) {
+function _localRegister(name, email, passwordHash, position='', dept='') {
   const users = _localUsers();
   if (users.find(u => u.email === email)) return { success: false, message: 'อีเมลนี้ถูกใช้งานแล้ว' };
-  const u = { id: 'u_' + Date.now(), name, email, passwordHash, createdAt: new Date().toISOString() };
+  const u = { id: 'u_' + Date.now(), name, email, passwordHash, position, dept, createdAt: new Date().toISOString() };
   users.push(u);
   _saveLocalUsers(users);
-  return { success: true, user: { id: u.id, name: u.name, email: u.email } };
+  return { success: true, user: { id: u.id, name: u.name, email: u.email, position, dept } };
 }
 function _localResetPassword(email) {
   const users = _localUsers();
@@ -2813,23 +2817,37 @@ function authGuest() {
 }
 
 function authLogout() {
+  // Sign out Firebase ด้วยถ้า login ด้วย Firebase
+  if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+    firebase.auth().signOut().catch(() => {});
+  }
   _currentUser = null;
   _saveSession(null);
   _applyAuthUI();
   toggleUserMenu(true);
   showToast('👋 ออกจากระบบแล้ว', 2000);
-  setTimeout(()=> openAuthModal('login'), 500);
+  setTimeout(() => openAuthModal('login'), 500);
 }
 
 function _setLoggedIn(user) {
   _currentUser = user;
-  _saveSession(user); // เก็บ session ใน localStorage เฉพาะ session ปัจจุบัน (ไม่ใช่ข้อมูล users)
+  _saveSession(user);
   _applyAuthUI();
+  // โหลดข้อมูลจาก localStorage ใหม่ทุกครั้งที่ login สำเร็จ
+  if (user && !user.isGuest) {
+    if (typeof loadFromLocal   === 'function') loadFromLocal();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof renderTable     === 'function') renderTable();
+    // sync จาก Sheet หลัง login (safe mode)
+    if (typeof window._syncFromSheetSilent === 'function') {
+      setTimeout(window._syncFromSheetSilent, 800);
+    }
+  }
 }
 
 function _applyAuthUI() {
   const loggedIn = !!_currentUser && !_currentUser.isGuest;
-  const guest    = !!_currentUser && _currentUser.isGuest;
+  const guest    = !!_currentUser && !!_currentUser.isGuest;
 
   ['topbarAddBtn','tableAddBtn'].forEach(id => {
     const el = document.getElementById(id);
@@ -2846,19 +2864,26 @@ function _applyAuthUI() {
   if (pw) pw.style.display = _currentUser ? '' : 'none';
 
   if (_currentUser) {
-    const initials = _currentUser.isGuest ? '👁' : _currentUser.name.slice(0,1).toUpperCase();
-    const avatarEl = document.getElementById('userAvatar');
+    const initials   = _currentUser.isGuest ? '👁' : (_currentUser.name||'?').slice(0,1).toUpperCase();
+    const avatarEl   = document.getElementById('userAvatar');
     const pillNameEl = document.getElementById('userPillName');
     const menuNameEl = document.getElementById('menuDisplayName');
-    const menuEmailEl = document.getElementById('menuEmail');
-    
-    if (avatarEl) avatarEl.textContent = initials;
-    if (pillNameEl) pillNameEl.textContent = _currentUser.isGuest ? 'ผู้เยี่ยมชม' : _currentUser.name;
-    if (menuNameEl) menuNameEl.textContent = _currentUser.name;
+    const menuEmailEl= document.getElementById('menuEmail');
+    if (avatarEl)    avatarEl.textContent    = initials;
+    if (pillNameEl)  pillNameEl.textContent  = _currentUser.isGuest ? 'ผู้เยี่ยมชม' : _currentUser.name;
+    if (menuNameEl)  menuNameEl.textContent  = _currentUser.name;
     if (menuEmailEl) menuEmailEl.textContent = _currentUser.email || 'ผู้เยี่ยมชม (ไม่มีบัญชี)';
+    // แสดง position ใน dropdown ถ้ามี
+    const menuPosEl = document.getElementById('menuPosition');
+    if (menuPosEl) {
+      const pos  = _currentUser.position || '';
+      const dept = _currentUser.dept || '';
+      menuPosEl.textContent = [pos, dept].filter(Boolean).join(' · ');
+      menuPosEl.style.display = (pos||dept) ? 'block' : 'none';
+    }
   }
 
-  renderTable && renderTable();
+  if (typeof renderTable === 'function') renderTable();
 }
 
 function toggleUserMenu(forceClose) {
@@ -2927,7 +2952,7 @@ function showPage(page, strategyFilter) {
     dashboard:    ['Dashboard สรุปภาพรวม','รายงานผลการดำเนินงานโครงการ ปีงบประมาณ พ.ศ. 2569'],
     projects:     ['รายการโครงการ','โครงการทั้งหมด 4 ยุทธศาสตร์ + งบบริหารสำนักงาน'],
     gsheet:       ['Google Sheets','นำเข้า / ส่งออกข้อมูล'],
-    livetracking: ['📡 ติดตามสด','ระบบติดตามผลการดำเนินงานแบบเรียลไทม์']
+    livetracking: ['📡 ประวัติการแก้ไข','ระบบติดตามผลการดำเนินงานแบบเรียลไทม์']
   };
   document.getElementById('topbar-title').textContent=titles[page][0];
   document.getElementById('topbar-sub').textContent=titles[page][1];
@@ -5558,6 +5583,120 @@ window._pendingSaveTs = 0;
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
+// ══ AUTH SYSTEM (ปี 2569) — Firebase + GAS + Local Fallback ══════════════════
+
+// ── Welcome popup หลัง login ────────────────────────────────
+function _showLoginSuccess(name, position, dept, isOffline=false) {
+  if (!document.getElementById('_wlcSt')) {
+    const s = document.createElement('style');
+    s.id = '_wlcSt';
+    s.textContent = `
+      @keyframes _wlcOverlayIn { from{opacity:0} to{opacity:1} }
+      @keyframes _wlcOverlayOut { from{opacity:1} to{opacity:0} }
+      @keyframes _wlcCardIn {
+        0%  { opacity:0; transform:translateY(32px) scale(.94) }
+        65% { transform:translateY(-6px) scale(1.01) }
+        100%{ opacity:1; transform:translateY(0) scale(1) }
+      }
+      @keyframes _wlcCardOut { 0%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(.9) translateY(20px)} }
+      @keyframes _wlcShimmer { 0%{background-position:200% center} 100%{background-position:-200% center} }
+      @keyframes _wlcPulse { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)} 50%{box-shadow:0 0 0 10px rgba(34,197,94,0)} }
+      @keyframes _wlcBar { from{width:0} to{width:100%} }
+      ._wlc-overlay {
+        position:fixed;inset:0;z-index:99999;
+        display:flex;align-items:center;justify-content:center;
+        background:rgba(15,23,42,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+        animation:_wlcOverlayIn .3s ease forwards;
+      }
+      ._wlc-card {
+        background:#fff;border-radius:20px;
+        box-shadow:0 24px 64px rgba(0,0,0,.22),0 4px 16px rgba(0,0,0,.1);
+        width:340px;overflow:hidden;
+        animation:_wlcCardIn .45s cubic-bezier(.22,.68,0,1.15) forwards;
+        font-family:'Sarabun',sans-serif;
+      }
+      ._wlc-header {
+        padding:28px 24px 20px;
+        background:linear-gradient(135deg,#0f4c81 0%,#1a6bb0 50%,#0d7a4e 100%);
+        background-size:200% auto;animation:_wlcShimmer 3s linear infinite;
+        text-align:center;position:relative;
+      }
+      ._wlc-avatar {
+        width:64px;height:64px;border-radius:50%;
+        background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.6);
+        display:flex;align-items:center;justify-content:center;
+        font-size:26px;font-weight:700;color:#fff;margin:0 auto 12px;
+        animation:_wlcPulse 2s ease infinite;
+      }
+      ._wlc-greeting { font-size:13px;color:rgba(255,255,255,.8);margin-bottom:4px;letter-spacing:.3px; }
+      ._wlc-name { font-size:18px;font-weight:700;color:#fff;line-height:1.3; }
+      ._wlc-body { padding:20px 24px 8px; }
+      ._wlc-row {
+        display:flex;align-items:center;gap:10px;
+        padding:10px 14px;border-radius:10px;
+        background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:8px;
+      }
+      ._wlc-row-icon { font-size:18px;flex-shrink:0; }
+      ._wlc-row-label { font-size:10.5px;color:#94a3b8;margin-bottom:1px; }
+      ._wlc-row-val { font-size:13.5px;font-weight:600;color:#1e293b;line-height:1.3; }
+      ._wlc-offline {
+        margin:0 24px 12px;padding:7px 12px;border-radius:8px;
+        background:#fffbeb;border:1px solid #fde68a;font-size:11.5px;color:#92400e;text-align:center;
+      }
+      ._wlc-footer { padding:0 24px 20px;margin-top:4px; }
+      ._wlc-btn {
+        width:100%;padding:11px;border:none;border-radius:10px;
+        background:linear-gradient(135deg,#0f4c81,#1a6bb0);
+        color:#fff;font-size:14px;font-weight:600;
+        font-family:'Sarabun',sans-serif;cursor:pointer;transition:opacity .15s,transform .15s;
+      }
+      ._wlc-btn:hover { opacity:.9;transform:translateY(-1px); }
+      ._wlc-progress { height:3px;background:#f1f5f9; }
+      ._wlc-progress-fill {
+        height:100%;background:linear-gradient(90deg,#0f4c81,#22c55e);
+        animation:_wlcBar var(--d,3.5s) linear forwards;
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  const initial = (name||'?').replace(/^(นาย|นาง|นางสาว|ดร\.?|ศ\.?|รศ\.?|ผศ\.?|พญ\.?|นพ\.?|ว่าที่)\s*/,'').trim().charAt(0).toUpperCase();
+  const dur = 3800;
+  const overlay = document.createElement('div');
+  overlay.className = '_wlc-overlay';
+
+  const posRow  = position ? `<div class="_wlc-row"><div class="_wlc-row-icon">💼</div><div><div class="_wlc-row-label">ตำแหน่ง</div><div class="_wlc-row-val">${position}</div></div></div>` : '';
+  const deptRow = dept     ? `<div class="_wlc-row"><div class="_wlc-row-icon">🏢</div><div><div class="_wlc-row-label">สังกัด</div><div class="_wlc-row-val">${dept}</div></div></div>` : '';
+  const offlineBadge = isOffline ? '<div class="_wlc-offline">⚠️ ใช้ข้อมูลในเครื่อง (ไม่ได้เชื่อมต่อเซิร์ฟเวอร์)</div>' : '';
+
+  overlay.innerHTML = `
+    <div class="_wlc-card">
+      <div class="_wlc-header">
+        <div class="_wlc-avatar">${initial}</div>
+        <div class="_wlc-greeting">ยินดีต้อนรับเข้าสู่ระบบ</div>
+        <div class="_wlc-name">${name}</div>
+      </div>
+      <div class="_wlc-body">${posRow}${deptRow}</div>
+      ${offlineBadge}
+      <div class="_wlc-footer">
+        <button class="_wlc-btn" id="_wlcCloseBtn">เข้าสู่ระบบ →</button>
+      </div>
+      <div class="_wlc-progress"><div class="_wlc-progress-fill" style="--d:${dur/1000}s"></div></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const close = () => {
+    overlay.style.animation = '_wlcOverlayOut .3s ease forwards';
+    overlay.querySelector('._wlc-card').style.animation = '_wlcCardOut .3s ease forwards';
+    setTimeout(() => { if(overlay.parentNode) overlay.remove(); }, 300);
+  };
+  overlay.querySelector('#_wlcCloseBtn').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if(e.target === overlay) close(); });
+  setTimeout(close, dur);
+}
+
+// ── Firebase config ──────────────────────────────────────────
 (function(){
   var firebaseConfig = {
     apiKey:            "AIzaSyD2D_fOMOXaHFsRCtTOObEN-fJ5tXy12hg",
@@ -5568,124 +5707,179 @@ window._pendingSaveTs = 0;
     appId:             "1:84231645157:web:97b713f3d4cafab4d6310c"
   };
   if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-  var auth = firebase.auth();
-  var db   = firebase.firestore();
 
-  // ── สมัครสมาชิก ──────────────────────────────────────────
+  // ── Login (Firebase → GAS → Local) ──────────────────────
+  window.authLogin = async function() {
+    const email = (document.getElementById('loginEmail').value || '').trim().toLowerCase();
+    const pass  = document.getElementById('loginPassword').value || '';
+    const errEl = document.getElementById('loginError');
+    const btn   = document.getElementById('loginSubmitBtn');
+    errEl.classList.remove('show');
+    if (!email || !pass) { errEl.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน'; errEl.classList.add('show'); return; }
+    btn.disabled = true; btn.textContent = '⏳ กำลังตรวจสอบ...';
+    const hash = _hashSimple(pass);
+
+    // 1. Firebase Auth
+    try {
+      const cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
+      const uid  = cred.user.uid;
+      let fullname = email, position = '', dept = '';
+      try {
+        const doc = await firebase.firestore().collection('members').doc(uid).get();
+        if (doc.exists) {
+          fullname = doc.data().fullname || email;
+          position = doc.data().position || '';
+          dept     = doc.data().dept     || '';
+        }
+      } catch(e) {}
+      const userObj = { id:uid, name:fullname, email, uid, isGuest:false, position, dept };
+      _setLoggedIn(userObj);
+      closeAuthModal();
+      _showLoginSuccess(fullname, position, dept);
+      btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+      return;
+    } catch(err) {
+      const m = err.code;
+      let msg = '❌ เกิดข้อผิดพลาด';
+      if (m==='auth/user-not-found'||m==='auth/invalid-credential') msg = '❌ Email หรือรหัสผ่านไม่ถูกต้อง';
+      else if (m==='auth/wrong-password')    msg = '❌ รหัสผ่านไม่ถูกต้อง';
+      else if (m==='auth/invalid-email')     msg = '❌ รูปแบบอีเมลไม่ถูกต้อง';
+      else if (m==='auth/too-many-requests') msg = '❌ ลองใหม่อีกครั้งในภายหลัง';
+      if (!m || m === 'auth/network-request-failed') { /* fallthrough to GAS */ }
+      else { errEl.textContent = msg; errEl.classList.add('show'); btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ'; return; }
+    }
+
+    // 2. GAS fallback
+    if (_gasReady()) {
+      try {
+        const res = await _gasAuthCall({ action:'loginUser', email, passwordHash:hash });
+        if (res.success) {
+          _localSyncUser({ id:res.user.id, name:res.user.name, email:res.user.email, passwordHash:hash, position:res.user.position||'', dept:res.user.dept||'' });
+          _setLoggedIn({ id:res.user.id, name:res.user.name, email:res.user.email, isGuest:false, position:res.user.position||'', dept:res.user.dept||'' });
+          closeAuthModal();
+          _showLoginSuccess(res.user.name, res.user.position||'', res.user.dept||'');
+          btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ'; return;
+        } else {
+          errEl.textContent = res.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+          errEl.classList.add('show'); btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ'; return;
+        }
+      } catch(e) { console.warn('GAS login unavailable, trying local:', e.message); }
+    }
+
+    // 3. Local cache สุดท้าย
+    const localRes = _localLogin(email, hash);
+    if (localRes.success) {
+      _setLoggedIn({ id:localRes.user.id, name:localRes.user.name, email:localRes.user.email, isGuest:false, position:localRes.user.position||'', dept:localRes.user.dept||'' });
+      closeAuthModal();
+      _showLoginSuccess(localRes.user.name, localRes.user.position||'', localRes.user.dept||'', true);
+    } else {
+      errEl.textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'; errEl.classList.add('show');
+    }
+    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+  };
+
+  // ── Register (Firebase → GAS → Local) ───────────────────
   window.fbRegisterSubmit = async function() {
-    var name     = (document.getElementById('fbRegName').value || '').trim();
-    var position = (document.getElementById('fbRegPosition').value || '').trim();
-    var dept     = document.getElementById('fbRegDept').value;
-    var email    = (document.getElementById('fbRegEmail').value || '').trim();
-    var password = document.getElementById('fbRegPassword').value;
-    var confirm  = document.getElementById('fbRegConfirm').value;
-    var errEl    = document.getElementById('fbRegError');
+    const name     = (document.getElementById('fbRegName').value     || '').trim();
+    const position = (document.getElementById('fbRegPosition').value || '').trim();
+    const dept     = document.getElementById('fbRegDept').value;
+    const email    = (document.getElementById('fbRegEmail').value    || '').trim().toLowerCase();
+    const password = document.getElementById('fbRegPassword').value;
+    const confirm  = document.getElementById('fbRegConfirm').value;
+    const errEl    = document.getElementById('fbRegError');
     errEl.style.display = 'none';
 
-    if (!name || !position || !dept || !email || !password || !confirm) {
-      errEl.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง';
-      errEl.style.display = 'block'; return;
+    if (!name||!position||!dept||!email||!password||!confirm) {
+      errEl.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง'; errEl.style.display = 'block'; return;
     }
-    if (password.length < 6) {
-      errEl.textContent = '⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
-      errEl.style.display = 'block'; return;
-    }
-    if (password !== confirm) {
-      errEl.textContent = '⚠️ รหัสผ่านไม่ตรงกัน';
-      errEl.style.display = 'block'; return;
-    }
+    if (password.length < 6) { errEl.textContent = '⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; errEl.style.display = 'block'; return; }
+    if (password !== confirm) { errEl.textContent = '⚠️ รหัสผ่านไม่ตรงกัน'; errEl.style.display = 'block'; return; }
 
-    var btn = document.getElementById('fbRegSubmitBtn');
-    btn.disabled = true;
-    btn.textContent = '⏳ กำลังสมัครสมาชิก...';
+    const btn = document.getElementById('fbRegSubmitBtn');
+    btn.disabled = true; btn.textContent = '⏳ กำลังสมัครสมาชิก...';
 
+    // 1. Firebase Auth
     try {
-      // 1. สร้าง account ใน Firebase Auth
-      var cred = await auth.createUserWithEmailAndPassword(email, password);
-      var uid  = cred.user.uid;
-
-      // 2. เก็บข้อมูลเพิ่มเติมใน Firestore
-      await db.collection('members').doc(uid).set({
-        fullname: name, position: position, dept: dept,
-        email: email, uid: uid,
+      const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+      const uid  = cred.user.uid;
+      await firebase.firestore().collection('members').doc(uid).set({
+        fullname: name, position, dept, email, uid,
+        year: 2569,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-
-      // 3. แสดงหน้าสำเร็จ
       document.getElementById('fbRegFormSection').style.display    = 'none';
       document.getElementById('fbRegSuccessSection').style.display = 'flex';
       document.getElementById('fbRegSuccessMsg').innerHTML =
         '<strong>' + name + '</strong><br>' + email + '<br>ตำแหน่ง: ' + position + '<br>สังกัด: ' + dept +
         '<br><br><small style="color:var(--text3)">สามารถใช้ Email + Password นี้ Login ได้เลยครับ</small>';
-    } catch (err) {
-      var msg = err.message;
+      btn.disabled = false; btn.textContent = '✅ ลงทะเบียนสมาชิก';
+      return;
+    } catch(err) {
+      let msg = err.message;
       if (err.code === 'auth/email-already-in-use') msg = '❌ อีเมลนี้ถูกใช้งานแล้ว';
       if (err.code === 'auth/invalid-email')        msg = '❌ รูปแบบอีเมลไม่ถูกต้อง';
       if (err.code === 'auth/weak-password')        msg = '❌ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
-      errEl.textContent = msg;
-      errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = '✅ ลงทะเบียนสมาชิก';
+      if (err.code !== 'auth/network-request-failed') {
+        errEl.textContent = msg; errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = '✅ ลงทะเบียนสมาชิก'; return;
+      }
     }
+
+    // 2. GAS / Local fallback
+    const hash = _hashSimple(password);
+    const localRes = _localRegister(name, email, hash, position, dept);
+    if (localRes.success) {
+      document.getElementById('fbRegFormSection').style.display    = 'none';
+      document.getElementById('fbRegSuccessSection').style.display = 'flex';
+      document.getElementById('fbRegSuccessMsg').innerHTML =
+        '<strong>' + name + '</strong><br>' + email +
+        '<br><br><small style="color:var(--amber)">⚠️ บันทึกเฉพาะในเครื่องนี้ — กรุณาแจ้งผู้ดูแลระบบ</small>';
+    } else {
+      errEl.textContent = '❌ ' + localRes.message; errEl.style.display = 'block';
+    }
+    btn.disabled = false; btn.textContent = '✅ ลงทะเบียนสมาชิก';
   };
 
+  // ── Reset form หลังลงทะเบียนสำเร็จ ─────────────────────
   window.fbRegReset = function() {
-    ['fbRegName','fbRegPosition','fbRegEmail','fbRegPassword','fbRegConfirm'].forEach(function(id){
-      document.getElementById(id).value = '';
-    });
+    ['fbRegName','fbRegPosition','fbRegEmail','fbRegPassword','fbRegConfirm'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fbRegDept').value = '';
     document.getElementById('fbRegError').style.display = 'none';
     document.getElementById('fbRegSuccessSection').style.display = 'none';
     document.getElementById('fbRegFormSection').style.display    = 'flex';
-    var btn = document.getElementById('fbRegSubmitBtn');
-    btn.disabled = false;
-    btn.textContent = '✅ ลงทะเบียนสมาชิก';
+    const btn = document.getElementById('fbRegSubmitBtn');
+    btn.disabled = false; btn.textContent = '✅ ลงทะเบียนสมาชิก';
   };
 
-  // ── Login ด้วย Firebase Auth ──────────────────────────────
-  window.authLogin = async function() {
-    var email    = (document.getElementById('loginEmail').value || '').trim();
-    var password = document.getElementById('loginPassword').value;
-    var errEl    = document.getElementById('loginError');
-    if (errEl) errEl.style.display = 'none';
+  // ── รอ Firebase resolve auth state (ป้องกัน race condition) ──
+  let _authResolved = false;
+  firebase.auth().onAuthStateChanged(async function(user) {
+    if (_authResolved) return;
+    _authResolved = true;
 
-    if (!email || !password) {
-      if (errEl) { errEl.textContent = '⚠️ กรุณากรอก Email และรหัสผ่าน'; errEl.style.display = 'block'; }
-      return;
-    }
-
-    var btn = document.getElementById('loginSubmitBtn');
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ กำลังเข้าสู่ระบบ...'; }
-
-    try {
-      var cred = await auth.signInWithEmailAndPassword(email, password);
-      var uid  = cred.user.uid;
-
-      // พยายามดึงข้อมูลจาก Firestore (ถ้าไม่ได้ก็ใช้ email แทน)
-      var fullname = email;
+    if (user) {
+      let fullname = user.displayName || user.email;
+      let position = '', dept = '';
       try {
-        var doc = await db.collection('members').doc(uid).get();
-        if (doc.exists) fullname = doc.data().fullname || email;
+        const doc = await firebase.firestore().collection('members').doc(user.uid).get();
+        if (doc.exists) {
+          fullname = doc.data().fullname || user.email;
+          position = doc.data().position || '';
+          dept     = doc.data().dept     || '';
+        }
       } catch(e) {}
-
-      // ใช้ระบบ session เดิม (_setLoggedIn + closeAuthModal)
-      var userObj = { id: uid, name: fullname, email: email, uid: uid };
-      if (typeof _setLoggedIn === 'function') _setLoggedIn(userObj);
-      if (typeof closeAuthModal === 'function') closeAuthModal();
-      if (typeof updateDashboard === 'function') updateDashboard();
-      if (typeof showToast === 'function') showToast('👋 ยินดีต้อนรับ ' + fullname, 2500);
-
-    } catch (err) {
-      var msg = '❌ เกิดข้อผิดพลาด';
-      if (err.code === 'auth/user-not-found')     msg = '❌ ไม่พบบัญชีผู้ใช้นี้';
-      if (err.code === 'auth/wrong-password')     msg = '❌ รหัสผ่านไม่ถูกต้อง';
-      if (err.code === 'auth/invalid-email')      msg = '❌ รูปแบบอีเมลไม่ถูกต้อง';
-      if (err.code === 'auth/invalid-credential') msg = '❌ Email หรือรหัสผ่านไม่ถูกต้อง';
-      if (err.code === 'auth/too-many-requests')  msg = '❌ ลองใหม่อีกครั้งในภายหลัง';
-      if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
-      if (btn) { btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ'; }
+      _setLoggedIn({ id:user.uid, name:fullname, email:user.email, uid:user.uid, isGuest:false, position, dept });
+    } else {
+      // ถ้า _currentUser เป็น guest → ไม่ต้องทำอะไร
+      if (_currentUser && _currentUser.isGuest) return;
+      _currentUser = null;
+      _saveSession(null);
+      if (typeof _applyAuthUI === 'function') _applyAuthUI();
+      setTimeout(() => {
+        if (!_currentUser && typeof openAuthModal === 'function') openAuthModal('login');
+      }, 300);
     }
-  };
+  });
 })();
 </script>
 </body>
