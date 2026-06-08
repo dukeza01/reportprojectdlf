@@ -823,10 +823,52 @@ code { font-family: monospace; font-size: 11px; background: var(--surface2); pad
 
 /* Print */
 @media print {
-  .sidebar, .topbar, .toolbar, .td-actions, .pagination { display: none !important; }
-  .main { margin-left: 0; }
-  .content { padding: 0; }
-  table { font-size: 10px; }
+  /* ── ซ่อน UI ที่ไม่ต้องการพิมพ์ ── */
+  .sidebar,
+  .topbar,
+  .toolbar,
+  .td-actions,
+  .pagination,
+  .btn,
+  .topbar-actions,
+  #pdfModalOverlay,
+  #detailOverlay,
+  #deleteOverlay,
+  #lightboxOverlay { display: none !important; }
+
+  /* ── Layout reset ── */
+  body { background: #fff !important; }
+  .main { margin-left: 0 !important; }
+  .content { padding: 0 !important; }
+
+  /* ── Page setup ── */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 12mm 15mm 12mm;
+  }
+
+  /* ── ป้องกันตกขอบ: ห้ามตัดกลาง block เหล่านี้ ── */
+  .pdf-project-block,
+  .pdf-strategy-header,
+  .pdf-strategy-footer,
+  .pdf-budget-bar,
+  .pdf-metric-row,
+  .pdf-strategy-table,
+  table,
+  thead { break-inside: avoid; page-break-inside: avoid; }
+
+  /* หัวตารางติดกับ body เสมอ */
+  thead { break-after: avoid; page-break-after: avoid; }
+
+  /* แต่ละยุทธศาสตร์ขึ้นหน้าใหม่ */
+  .pdf-strategy-section { break-before: page; page-break-before: always; }
+  .pdf-strategy-section:first-child { break-before: avoid; page-break-before: avoid; }
+
+  /* ── พิมพ์สี background ── */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
 
 /* ── Auth Modal ── */
@@ -5103,7 +5145,7 @@ function _buildOverviewHTML(fp, qLabel) {
       </div>
 
       <!-- Budget Progress Bar -->
-      <div style="background:#fff;border:1px solid #e4e7ed;border-radius:12px;padding:16px 20px;margin-bottom:18px">
+      <div class="pdf-budget-bar" style="background:#fff;border:1px solid #e4e7ed;border-radius:12px;padding:16px 20px;margin-bottom:18px">
         <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:#1c2333">📊 ภาพรวมการใช้จ่ายงบประมาณรวมทุกยุทธศาสตร์</div>
         <div style="height:16px;border-radius:99px;overflow:hidden;background:#e4e7ed;display:flex;margin-bottom:10px">
           <div style="width:${spentPct}%;background:linear-gradient(90deg,#059669,#34c179);min-width:${Number(spentPct)>0?2:0}px"></div>
@@ -5119,7 +5161,7 @@ function _buildOverviewHTML(fp, qLabel) {
       </div>
 
       <!-- Strategy Table -->
-      <div style="background:#fff;border:1px solid #e4e7ed;border-radius:12px;overflow:hidden;margin-bottom:18px">
+      <div class="pdf-strategy-table" style="background:#fff;border:1px solid #e4e7ed;border-radius:12px;overflow:hidden;margin-bottom:18px">
         <div style="background:#1c2333;padding:12px 16px;color:#fff;font-size:14px;font-weight:700">ผลการดำเนินงานรายยุทธศาสตร์</div>
         <table style="width:100%;border-collapse:collapse;font-family:'Sarabun',sans-serif">
           <thead>
@@ -5207,8 +5249,8 @@ function _buildProjectsHTML(fp, qLabel, strategyFilter) {
 
     html += `
       <!-- Strategy heading -->
-      <div style="margin-bottom:14px">
-        <div style="background:${color};color:#fff;padding:12px 18px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">
+      <div class="pdf-strategy-section" style="margin-bottom:14px">
+        <div class="pdf-strategy-header" style="background:${color};color:#fff;padding:12px 18px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">
           <div>
             <div style="font-size:15px;font-weight:700">${_S_NAMES[s]} · ${_S_FULL[s]}</div>
             <div style="font-size:12px;opacity:.85;margin-top:2px">${ps.length} โครงการ | งบอนุมัติ ${_fmtFull(totalB)} บาท | ใช้+PO ${pct}%</div>
@@ -5228,7 +5270,7 @@ function _buildProjectsHTML(fp, qLabel, strategyFilter) {
       const rowBg = idx%2===0?'#fff':'#fafbfc';
 
       html += `
-        <div style="background:${rowBg};border-left:4px solid ${color};border-right:1px solid #e4e7ed;border-bottom:1px solid #e4e7ed;padding:14px 18px">
+        <div class="pdf-project-block" style="background:${rowBg};border-left:4px solid ${color};border-right:1px solid #e4e7ed;border-bottom:1px solid #e4e7ed;padding:14px 18px">
 
           <!-- Project header -->
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
@@ -5280,7 +5322,7 @@ function _buildProjectsHTML(fp, qLabel, strategyFilter) {
 
     // Strategy footer summary
     html += `
-        <div style="background:${light};border-left:4px solid ${color};border-right:1px solid #e4e7ed;border-bottom:1px solid #e4e7ed;padding:10px 18px;border-radius:0 0 10px 10px;overflow:hidden">
+        <div class="pdf-strategy-footer" style="background:${light};border-left:4px solid ${color};border-right:1px solid #e4e7ed;border-bottom:1px solid #e4e7ed;padding:10px 18px;border-radius:0 0 10px 10px;overflow:hidden">
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px 16px;font-size:12px;font-weight:600">
             <span>📊 สรุปยุทธศาสตร์ · <strong>${ps.length}</strong> โครงการ</span>
             <span>งบรวม: <strong>${_fmtFull(totalB)}</strong> บาท</span>
@@ -5389,13 +5431,30 @@ function _wrapFullHTML(bodyHTML, title) {
     background: #f4f6f9;
     color: #1c2333;
     line-height: 1.65;
-    width: 794px;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  @page {
+    size: A4 portrait;
+    margin: 12mm 12mm 15mm 12mm;
+  }
   @media print {
-    body { width: 794px; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    /* ── ป้องกันตกขอบ ── */
+    .pdf-project-block,
+    .pdf-strategy-header,
+    .pdf-strategy-footer,
+    .pdf-budget-bar,
+    .pdf-metric-row,
+    .pdf-strategy-table,
+    table, thead {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    thead { break-after: avoid; page-break-after: avoid; }
+    /* แต่ละยุทธศาสตร์ขึ้นหน้าใหม่ */
+    .pdf-strategy-section { break-before: page; page-break-before: always; }
+    .pdf-strategy-section:first-child { break-before: avoid; page-break-before: avoid; }
   }
 </style>
 </head>
@@ -5404,96 +5463,71 @@ function _wrapFullHTML(bodyHTML, title) {
 </html>`;
 }
 
-/* ─── Client-side PDF fallback (jsPDF + html2canvas) ─── */
-async function _generatePDFClientSide(bodyHTML, fileName) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-
-  _pdfProgress('🖼️ กำลัง render หน้าเอกสาร...', 30);
-  const canvas = await _htmlToCanvas(bodyHTML);
-
-  _pdfProgress('📄 กำลังแบ่งหน้า PDF...', 60);
-  await _canvasToPdfPages(doc, canvas, true);
-
-  _pdfProgress('💾 กำลังดาวน์โหลด...', 90);
-  doc.save(fileName);
-}
-
 async function generatePDF() {
   const btn = document.getElementById('pdfGenBtn');
   btn.disabled = true;
   btn.textContent = '⏳ กำลังสร้าง...';
   document.getElementById('pdfProgress').classList.add('show');
 
-  const qSel   = document.getElementById('pdfQuarterSel').value;
-  const sSel   = document.getElementById('pdfStrategySel').value;
-  const qLabel = _Q_LABELS[qSel];
-  const fp     = qSel==='all' ? [...projects] : projects.filter(p=>p.quarter===qSel||p.quarter==='all');
-
-  const typeLabel = _pdfOptSelected===1?'ภาพรวมยุทธศาสตร์':_pdfOptSelected===2?'รายโครงการ':'ฉบับสมบูรณ์';
-  const safeName  = qLabel.replace(/[()\–·\s]+/g,'_');
-  const fileName  = `รายงานผลการดำเนินงาน_${typeLabel}_${safeName}_2569.pdf`;
-
   try {
-    // ── สร้าง HTML ──
+    const qSel   = document.getElementById('pdfQuarterSel').value;
+    const sSel   = document.getElementById('pdfStrategySel').value;
+    const qLabel = _Q_LABELS[qSel];
+    const fp     = qSel==='all' ? [...projects] : projects.filter(p=>p.quarter===qSel||p.quarter==='all');
+
+    const typeLabel = _pdfOptSelected===1?'ภาพรวมยุทธศาสตร์':_pdfOptSelected===2?'รายโครงการ':'ฉบับสมบูรณ์';
+    const safeName  = qLabel.replace(/[()\–·\s]+/g,'_');
+    const fileName  = `รายงานผลการดำเนินงาน_${typeLabel}_${safeName}_2569.pdf`;
+
+    // ── 1. สร้าง HTML ──
+    _pdfProgress('📊 กำลังสร้างเนื้อหารายงาน...', 20);
     let bodyHTML = '';
     if (_pdfOptSelected === 1 || _pdfOptSelected === 3) {
-      _pdfProgress('📊 กำลังสร้างหน้าสรุปภาพรวม...', 10);
       bodyHTML += _buildOverviewHTML(fp, qLabel);
     }
     if (_pdfOptSelected === 2 || _pdfOptSelected === 3) {
-      _pdfProgress('📋 กำลังสร้างหน้ารายโครงการ...', 20);
       bodyHTML += _buildProjectsHTML(fp, qLabel, sSel);
     }
 
-    // ── ตรวจสอบว่า Puppeteer server พร้อมหรือยัง ──
-    _pdfProgress('🔍 ตรวจสอบ PDF Server...', 25);
-    let serverOK = false;
-    try {
-      const ping = await fetch(_PDF_SERVER, { method:'OPTIONS', signal: AbortSignal.timeout(3000) });
-      serverOK = ping.ok || ping.status === 204;
-    } catch(_) { serverOK = false; }
+    // ── 2. เปิด print window ──
+    _pdfProgress('🖨️ กำลังเปิดหน้าต่างพิมพ์...', 60);
+    const fullHTML = _wrapFullHTML(bodyHTML, fileName);
 
-    if (serverOK) {
-      // ── วิธีที่ 1: Puppeteer server (คุณภาพสูง) ──
-      const fullHTML = _wrapFullHTML(bodyHTML, fileName);
-      _pdfProgress('🖨️ กำลัง render PDF ด้วย Chrome...', 60);
-      const resp = await fetch(_PDF_SERVER, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: fullHTML, filename: fileName }),
-        signal: AbortSignal.timeout(60000)
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: resp.statusText }));
-        throw new Error(err.error || resp.statusText);
-      }
-
-      _pdfProgress('💾 กำลังดาวน์โหลด...', 90);
-      const blob = await resp.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url; a.download = fileName; a.click();
-      URL.revokeObjectURL(url);
-
-    } else {
-      // ── วิธีที่ 2: Client-side fallback (jsPDF + html2canvas) ──
-      _pdfProgress('💡 ไม่พบ PDF Server — ใช้ระบบสำรองในเบราว์เซอร์...', 28);
-      await _generatePDFClientSide(bodyHTML, fileName);
+    const printWin = window.open('', '_blank', 'width=900,height=700');
+    if (!printWin) {
+      throw new Error('ไม่สามารถเปิด print window ได้ — กรุณาอนุญาต Popup ในเบราว์เซอร์');
     }
 
-    _pdfProgress('✅ Export PDF สำเร็จ!', 100);
+    printWin.document.open();
+    printWin.document.write(fullHTML);
+    printWin.document.close();
+
+    // ── 3. รอ font + resource โหลดเสร็จแล้วค่อย print ──
+    _pdfProgress('⏳ รอ font โหลด...', 80);
+    printWin.onload = () => {
+      printWin.document.fonts.ready.then(() => {
+        setTimeout(() => {
+          printWin.focus();
+          printWin.print();
+          // ปิด window หลัง print dialog ปิด (บาง browser รองรับ)
+          printWin.onafterprint = () => printWin.close();
+        }, 400);
+      });
+    };
+
+    _pdfProgress('✅ เปิดหน้าต่างพิมพ์สำเร็จ!', 100);
     setTimeout(() => {
       closePdfModal();
-      showToast('✅ Export PDF สำเร็จ · ' + fileName, 3500);
-    }, 700);
+      showToast('🖨️ เลือก "Save as PDF" ใน print dialog เพื่อบันทึกไฟล์ · ' + fileName, 5000);
+    }, 800);
 
   } catch(err) {
     console.error('PDF Error:', err);
     _pdfProgress('❌ เกิดข้อผิดพลาด: ' + err.message, 0);
+    showToast('❌ ' + err.message, 4000);
+  } finally {
     btn.disabled = false;
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ลองใหม่';
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> สร้าง PDF';
   }
 }
 
