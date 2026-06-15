@@ -3092,7 +3092,8 @@ function _ltProjectFingerprint(p) {
     id: p.id, name: p.name, status: p.status,
     budget: p.budget||0, spent: p.spent||0, po: p.po||0,
     result: p.result||'', problems: p.problems||'', solutions: p.solutions||'',
-    owner: p.owner||'', quarter: p.quarter||''
+    owner: p.owner||'', quarter: p.quarter||'',
+    lastEditedBy: p.lastEditedBy||'', lastEditedAt: p.lastEditedAt||''
   };
 }
 function _ltDiff(prev, curr) {
@@ -3102,12 +3103,12 @@ function _ltDiff(prev, curr) {
   const currMap = {};
   (curr||[]).forEach(p => currMap[p.id] = p);
 
-  const _actorName = () => (_currentUser && !_currentUser.isGuest) ? (_currentUser.name || _currentUser.email || 'ผู้ใช้') : null;
+  const _actorName = (f) => (f && f.lastEditedBy) ? f.lastEditedBy : ((_currentUser && !_currentUser.isGuest) ? (_currentUser.name || _currentUser.email || 'ผู้ใช้') : null);
   (curr||[]).forEach(p => {
     const before = prevMap[p.id];
     const f = _ltProjectFingerprint(p);
     if (!before) {
-      events.push({ type:'created', id:p.id, name:p.name, status:p.status, ts:Date.now(), change:'โครงการใหม่', user:_actorName() });
+      events.push({ type:'created', id:p.id, name:p.name, status:p.status, ts:Date.now(), change:'โครงการใหม่', user:_actorName(f) });
       return;
     }
     const changes = [];
@@ -3120,12 +3121,12 @@ function _ltDiff(prev, curr) {
     if (before.solutions !== f.solutions) changes.push({ field:'แนวทางแก้ไข', from:'', to:'(อัปเดต)' });
     if (before.owner !== f.owner)   changes.push({ field:'ผู้รับผิดชอบ', from:before.owner||'-', to:f.owner||'-' });
     if (changes.length) {
-      events.push({ type:'updated', id:p.id, name:p.name, status:p.status, ts:Date.now(), changes, user:_actorName() });
+      events.push({ type:'updated', id:p.id, name:p.name, status:p.status, ts:Date.now(), changes, user:_actorName(f) });
     }
   });
   (prev||[]).forEach(p => {
     if (!currMap[p.id]) {
-      events.push({ type:'deleted', id:p.id, name:p.name, ts:Date.now(), change:'ถูกลบ', user:_actorName() });
+      events.push({ type:'deleted', id:p.id, name:p.name, ts:Date.now(), change:'ถูกลบ', user:_actorName(null) });
     }
   });
   return events;
@@ -3969,7 +3970,7 @@ function saveProject(){
     if(i>=0) projects[i]={...projects[i],...data};
     // บันทึก local และ render ทันที — ข้อมูลถูกต้องอยู่แล้ว ไม่ต้องรอ Sheet
     window._pendingSaveTs = Date.now();
-    saveToLocal(true); closeModal(); renderTable(); updateDashboard();
+    saveToLocal(true); closeModal(); renderTable(); updateDashboard(); ltCaptureSnapshot();
     if(GAS_ENABLED){
       showToast('⏳ กำลังบันทึกขึ้น Google Sheet...', 2000);
       gasPost('update',{data})
@@ -3990,7 +3991,7 @@ function saveProject(){
     projects.push(data);
     // บันทึก local และ render ทันที — ข้อมูลถูกต้องอยู่แล้ว ไม่ต้องรอ Sheet
     window._pendingSaveTs = Date.now();
-    saveToLocal(true); closeModal(); renderTable(); updateDashboard();
+    saveToLocal(true); closeModal(); renderTable(); updateDashboard(); ltCaptureSnapshot();
     if(GAS_ENABLED){
       showToast('⏳ กำลังบันทึกขึ้น Google Sheet...', 2000);
       gasPost('save',{data})
@@ -4151,7 +4152,7 @@ function doDelete(){
   }
   projects=projects.filter(p=>p.id!=deleteId);
   document.getElementById('deleteOverlay').classList.remove('open');
-  saveToLocal(); renderTable(); updateDashboard();
+  saveToLocal(); renderTable(); updateDashboard(); ltCaptureSnapshot();
   if(GAS_ENABLED) gasPost('delete',{id:deleteId})
     .then(()=>showToast('🗑️ ลบโครงการสำเร็จ',2500))
     .catch(()=>showToast('⚠️ ลบในเครื่องแล้ว แต่ Sync Sheet ไม่สำเร็จ',3000));
