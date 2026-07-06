@@ -1919,7 +1919,7 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
             <code>https://script.google.com/macros/s/<strong>[DEPLOYMENT_ID]</strong>/exec</code>
           </div>
           <div class="gs-row">
-            <input type="text" id="gasUrlInput" class="form-input" placeholder="https://script.google.com/macros/s/AKfycby7m6f5gSM_vtnfRW8GfqL5o4inpbayd-EyodI2yVyXHGowwswJbFsJ5ct1n9Z4Sldp8A/exec" style="max-width:520px">
+            <input type="text" id="gasUrlInput" class="form-input" placeholder="https://script.google.com/macros/s/AKfycbyySm67KoRS37gE0OCERDxTMqDvsDnAgSL1znjL4XNexQbtRTgkFEY8K0_1rnYLxVc7hg/exec" style="max-width:520px">
             <button class="btn btn-primary btn-sm" onclick="applyGasUrl()">✔ ตั้งค่า URL</button>
           </div>
           <div id="gasUrlStatus" style="margin-top:8px;font-size:12px;color:var(--text3)">สถานะ: ยังไม่ได้ตั้งค่า GAS URL</div>
@@ -2770,9 +2770,9 @@ body.high-contrast .card, body.high-contrast .nav-item.active { border-width: 2p
         </div>
         <div class="form-field full"><div class="form-section">✏️ ข้อมูลผู้แก้ไข</div></div>
         <div class="form-field">
-          <label class="form-label">ชื่อผู้แก้ไข / อัปเดตข้อมูล <span style="color:var(--red)">*</span></label>
-          <input type="text" id="fEditorName" class="form-input" placeholder="กรอกชื่อ-นามสกุลผู้แก้ไข">
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">ชื่อจะถูกบันทึกพร้อมวันเวลาอัตโนมัติ</div>
+          <label class="form-label">ผู้แก้ไข / อัปเดตข้อมูล</label>
+          <input type="text" id="fEditorName" class="form-input" readonly style="background:var(--surface2);color:var(--text3);cursor:default">
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">ดึงชื่อและตำแหน่งจากบัญชีที่เข้าสู่ระบบอัตโนมัติ</div>
         </div>
         <div class="form-field">
           <label class="form-label">แก้ไขล่าสุด</label>
@@ -3135,7 +3135,13 @@ function onQuarterChange() {
 // ===== AUTH SYSTEM =====
 const AUTH_SESSION_KEY = 'dltv_auth_session_2569';
 
-let _currentUser = null; // null = ยังไม่ login, { id, name, email, isGuest } = login แล้ว
+let _currentUser = null; // null = ยังไม่ login, { id, name, email, isGuest, position, dept } = login แล้ว
+// แสดงชื่อ-นามสกุล และตำแหน่งของผู้ใช้ที่ล็อกอินอยู่ ใช้เติมอัตโนมัติในฟอร์ม/ประวัติการแก้ไข
+function _editorDisplayName(u) {
+  const user = u || _currentUser;
+  if (!user || user.isGuest) return '';
+  return user.position ? `${user.name} (${user.position})` : (user.name || '');
+}
 
 function _getSession() {
   try { return JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null'); } catch(e){ return null; }
@@ -3756,7 +3762,7 @@ function _ltProjectFingerprint(p) {
     budget: p.budget||0, spent: p.spent||0, po: p.po||0,
     result: p.result||'', problems: p.problems||'', solutions: p.solutions||'',
     owner: p.owner||'', quarter: p.quarter||'',
-    lastEditedBy: p.lastEditedBy||'', lastEditedAt: p.lastEditedAt||''
+    lastEditedBy: p.lastEditedBy||'', lastEditedByPosition: p.lastEditedByPosition||'', lastEditedAt: p.lastEditedAt||''
   };
 }
 function _ltDiff(prev, curr) {
@@ -3767,11 +3773,12 @@ function _ltDiff(prev, curr) {
   (curr||[]).forEach(p => currMap[p.id] = p);
 
   const _actorName = (f) => (f && f.lastEditedBy) ? f.lastEditedBy : ((_currentUser && !_currentUser.isGuest) ? (_currentUser.name || _currentUser.email || 'ผู้ใช้') : null);
+  const _actorPosition = (f) => (f && f.lastEditedByPosition) ? f.lastEditedByPosition : ((_currentUser && !_currentUser.isGuest) ? (_currentUser.position || '') : '');
   (curr||[]).forEach(p => {
     const before = prevMap[p.id];
     const f = _ltProjectFingerprint(p);
     if (!before) {
-      events.push({ type:'created', id:p.id, name:p.name, status:p.status, ts:Date.now(), change:'โครงการใหม่', user:_actorName(f) });
+      events.push({ type:'created', id:p.id, name:p.name, status:p.status, ts:Date.now(), change:'โครงการใหม่', user:_actorName(f), userPosition:_actorPosition(f) });
       return;
     }
     const changes = [];
@@ -3784,12 +3791,12 @@ function _ltDiff(prev, curr) {
     if (before.solutions !== f.solutions) changes.push({ field:'แนวทางแก้ไข', from:'', to:'(อัปเดต)' });
     if (before.owner !== f.owner)   changes.push({ field:'ผู้รับผิดชอบ', from:before.owner||'-', to:f.owner||'-' });
     if (changes.length) {
-      events.push({ type:'updated', id:p.id, name:p.name, status:p.status, ts:Date.now(), changes, user:_actorName(f) });
+      events.push({ type:'updated', id:p.id, name:p.name, status:p.status, ts:Date.now(), changes, user:_actorName(f), userPosition:_actorPosition(f) });
     }
   });
   (prev||[]).forEach(p => {
     if (!currMap[p.id]) {
-      events.push({ type:'deleted', id:p.id, name:p.name, ts:Date.now(), change:'ถูกลบ', user:_actorName(null) });
+      events.push({ type:'deleted', id:p.id, name:p.name, ts:Date.now(), change:'ถูกลบ', user:_actorName(null), userPosition:_actorPosition(null) });
     }
   });
   return events;
@@ -3853,7 +3860,7 @@ function renderLiveTracking() {
     } else if (ev.changes) {
       change = ev.changes.map(c => `<b>${c.field}</b>: ${c.from} → ${c.to}`).join(' · ');
     }
-    const userTag = ev.user ? `<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(59,114,240,.12);color:var(--accent);font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;margin-top:3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>${_esc(ev.user)}</span>` : '';
+    const userTag = ev.user ? `<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(59,114,240,.12);color:var(--accent);font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;margin-top:3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>${_esc(ev.user)}${ev.userPosition?' · '+_esc(ev.userPosition):''}</span>` : '';
     return `<div class="lt-feed-item ${ev.type==='created'?'created':ev.type==='deleted'?'deleted':'status-'+ev.status}">
       <div class="lt-feed-icon">${icon}</div>
       <div class="lt-feed-body">
@@ -4434,6 +4441,7 @@ function renderTable() {
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 ${p.lastEditedBy.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
               </span>
+              ${p.lastEditedByPosition?`<span style="font-size:10px;color:var(--text2)">${p.lastEditedByPosition.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`:''}
               ${p.lastEditedAt?`<span style="font-size:10px;color:var(--text3)">${p.lastEditedAt}</span>`:''}
             </div>
           ` : '<span style="color:var(--text3);font-size:11px">—</span>'}
@@ -4543,7 +4551,7 @@ function openAdd(){
   document.getElementById('fResult').value='';
   document.getElementById('fProblems').value='';
   document.getElementById('fSolutions').value='';
-  document.getElementById('fEditorName').value='';
+  document.getElementById('fEditorName').value=_editorDisplayName() || '— กรุณาเข้าสู่ระบบ —';
   document.getElementById('fEditedAt').value='';
   setComCheckboxes([]);
   document.getElementById('kpiInput').value='';
@@ -4578,8 +4586,8 @@ function openEdit(id){
   document.getElementById('fSolutions').value=p.solutions||'';
   document.getElementById('fOwner').value=p.owner||'';
   setComCheckboxes(p.committees||[]);
-  document.getElementById('fEditorName').value='';
-  document.getElementById('fEditedAt').value=p.lastEditedAt?(p.lastEditedAt+(p.lastEditedBy?' โดย '+p.lastEditedBy:'')):'— ยังไม่เคยแก้ไข —';
+  document.getElementById('fEditorName').value=_editorDisplayName() || '— กรุณาเข้าสู่ระบบ —';
+  document.getElementById('fEditedAt').value=p.lastEditedAt?(p.lastEditedAt+(p.lastEditedBy?' โดย '+p.lastEditedBy+(p.lastEditedByPosition?' ('+p.lastEditedByPosition+')':''):'')):'— ยังไม่เคยแก้ไข —';
   document.getElementById('kpiInput').value='';
   renderKPIList(); renderImgPreview();
   document.getElementById('modalOverlay').classList.add('open');
@@ -4621,7 +4629,8 @@ function saveProject(){
     owner:document.getElementById('fOwner').value.trim(),
     committees:getComCheckboxes(),
     images: cleanImages,
-    lastEditedBy: (document.getElementById('fEditorName').value||'').trim(),
+    lastEditedBy: _currentUser?.name || 'ผู้ใช้',
+    lastEditedByPosition: _currentUser?.position || '',
     lastEditedAt: new Date().toLocaleString('th-TH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
   };
   const imgCount = cleanImages.length;
@@ -4760,6 +4769,7 @@ function openDetail(id){
         </div>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:700;color:var(--accent)">${escapeHtml(p.lastEditedBy||'ไม่ระบุชื่อ')}</div>
+          ${p.lastEditedByPosition?`<div style="font-size:12px;color:var(--text2);margin-top:1px">${escapeHtml(p.lastEditedByPosition)}</div>`:''}
           <div style="font-size:11px;color:var(--text2);margin-top:2px">🕐 แก้ไขเมื่อ ${escapeHtml(p.lastEditedAt||'')}</div>
         </div>
       </div>
@@ -5320,7 +5330,7 @@ function renderCommitteeChart(fp) {
 
 // *** ใส่ URL ของ Google Apps Script Web App ที่นี่ ***
 // ⚠️ สำคัญ: เปลี่ยน URL ด้านล่างนี้ให้เป็น URL ของคุณเองที่ได้จากการ Deploy Google Apps Script
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby7m6f5gSM_vtnfRW8GfqL5o4inpbayd-EyodI2yVyXHGowwswJbFsJ5ct1n9Z4Sldp8A/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyySm67KoRS37gE0OCERDxTMqDvsDnAgSL1znjL4XNexQbtRTgkFEY8K0_1rnYLxVc7hg/exec';
 let _gasUrl = GAS_URL;
 let GAS_ENABLED = true;
 
@@ -7185,6 +7195,7 @@ function saveRisk() {
   const obj = { project, name, category, strategy, quarter, owner, likelihood, impact,
     control, contingency, status, residual, dueDate, reviewDate, note,
     lastEditedBy: _currentUser?.name || 'ผู้ใช้',
+    lastEditedByPosition: _currentUser?.position || '',
     lastEditedAt: new Date().toISOString()
   };
 
@@ -7293,7 +7304,7 @@ function openRiskDetail(id) {
       <div style="background:var(--amber-light);border:1px solid #f6cc70;border-radius:var(--radius);padding:.875rem 1rem;font-size:14px;line-height:1.7;white-space:pre-wrap;color:#92400e">${r.contingency || '— ยังไม่ได้ระบุ —'}</div>
     </div>
     ${r.note ? `<div style="margin-bottom:.5rem"><div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:6px">📝 หมายเหตุ</div><div style="font-size:14px;color:var(--text2);line-height:1.6">${r.note}</div></div>` : ''}
-    ${r.lastEditedBy ? `<div style="font-size:11px;color:var(--text3);margin-top:1rem;border-top:1px solid var(--border);padding-top:8px">แก้ไขล่าสุดโดย: ${r.lastEditedBy}${r.lastEditedAt ? ' · '+new Date(r.lastEditedAt).toLocaleString('th-TH') : ''}</div>` : ''}
+    ${r.lastEditedBy ? `<div style="font-size:11px;color:var(--text3);margin-top:1rem;border-top:1px solid var(--border);padding-top:8px">แก้ไขล่าสุดโดย: ${r.lastEditedBy}${r.lastEditedByPosition ? ' ('+r.lastEditedByPosition+')' : ''}${r.lastEditedAt ? ' · '+new Date(r.lastEditedAt).toLocaleString('th-TH') : ''}</div>` : ''}
   `;
 
   // edit button only for members
