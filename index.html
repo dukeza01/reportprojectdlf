@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบรายงานผลการดำเนินงานโครงการ พ.ศ. 2569 | มูลนิธิการศึกษาทางไกลผ่านดาวเทียม</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <img class="org-logo"
+           src="https://dltv.ac.th/upload/data/users/0/316/CMS/images/logo%20dlf%20%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C.png"
+           alt="มูลนิธิการศึกษาทางไกลผ่านดาวเทียม"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="org" style="display:none">มูลนิธิการศึกษาทางไกลผ่านดาวเทียม<br>ในพระบรมราชูปถัมภ์</div>
+      <div class="title">ระบบรายงานผลการดำเนินงาน</div>
+      <span class="badge-year" id="sidebarYearBadge">ปีงบประมาณ พ.ศ. 2569</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">หน้าหลัก</div>
+      <button class="nav-item active" onclick="showPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <div class="nav-section">ยุทธศาสตร์</div>
+      <button class="nav-item" onclick="showPage('projects','1')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        ยุทธศาสตร์ที่ 1
+      </button>
+      <button class="nav-item" onclick="showPage('projects','2')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        ยุทธศาสตร์ที่ 2
+      </button>
+      <button class="nav-item" onclick="showPage('projects','3')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        ยุทธศาสตร์ที่ 3
+      </button>
+      <button class="nav-item" onclick="showPage('projects','4')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        ยุทธศาสตร์ที่ 4
+      </button>
+      <button class="nav-item" onclick="showPage('projects','5')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M12 12v4M10 14h4"/></svg>
+        งบบริหารสำนักงาน
+      </button>
+      <div class="nav-section">จัดการ</div>
+      <button class="nav-item" onclick="showPage('livetracking')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
+        ประวัติการแก้ไข <span style="margin-left:auto;background:#4ade80;width:8px;height:8px;border-radius:50%;animation:lt-pulse 1.8s infinite"></span>
+      </button>
+      <button class="nav-item" onclick="showPage('projects','')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        โครงการทั้งหมด
+      </button>
+      <button class="nav-item" onclick="showPage('gsheet')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Google Sheets
+      </button>
+      <div class="nav-section">บริหารความเสี่ยง</div>
+      <button class="nav-item" onclick="showPage('risk')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        การบริหารความเสี่ยง
+      </button>
+    </div>
+    <div class="sidebar-footer">ไตรมาส 1-4 ปีงบประมาณ พ.ศ.2569</div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="เปิด/ปิดเมนู">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <div class="topbar-title" id="topbar-title">Dashboard สรุปภาพรวม</div>
+          <div class="topbar-sub" id="topbar-sub">รายงานผลการดำเนินงานโครงการ ปีงบประมาณ พ.ศ. 2569</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <!-- ─── Accessibility controls for elderly users ─── -->
+        <div class="a11y-bar" role="group" aria-label="ปรับขนาดตัวอักษร">
+          <button class="a11y-btn" onclick="changeFontScale(-10)" title="ลดขนาดตัวอักษร" aria-label="ลดขนาดตัวอักษร">A−</button>
+          <span class="a11y-bar-label" id="fontScaleLabel">100%</span>
+          <button class="a11y-btn" onclick="changeFontScale(10)" title="เพิ่มขนาดตัวอักษร" aria-label="เพิ่มขนาดตัวอักษร">A+</button>
+          <button class="a11y-btn reset" onclick="resetFontScale()" title="คืนค่าเริ่มต้น" aria-label="คืนค่าเริ่มต้น">รีเซ็ต</button>
+          <button class="a11y-btn" onclick="toggleHighContrast()" title="โหมดความเปรียบต่างสูง" aria-label="โหมดความเปรียบต่างสูง" id="hcBtn">◐</button>
+        </div>
+        <select class="quarter-select" id="quarterSelect" onchange="onQuarterChange()">
+          <option value="all">📅 ทุกไตรมาส</option>
+          <option value="1">ไตรมาส 1 (ต.ค.–ธ.ค. 68)</option>
+          <option value="2" selected>ไตรมาส 2 (ม.ค.–มี.ค. 69)</option>
+          <option value="3">ไตรมาส 3 (เม.ย.–มิ.ย. 69)</option>
+          <option value="4">ไตรมาส 4 (ก.ค.–ก.ย. 69)</option>
+        </select>
+        <button class="btn btn-sm" onclick="window.print()" style="color:var(--text2)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          พิมพ์
+        </button>
+        <button class="btn btn-sm" onclick="openPdfModal()" style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(220,38,38,.3)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>
+          Export PDF
+        </button>
+        <button class="btn btn-sm btn-teal" onclick="showPage('gsheet')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          นำเข้า/ส่งออก
+        </button>
+        <!-- Auth: แสดงปุ่มเพิ่มเฉพาะสมาชิก -->
+        <button class="btn btn-sm btn-primary" id="topbarAddBtn" onclick="openAdd()" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          เพิ่มโครงการ
+        </button>
+        <span class="readonly-badge" id="readonlyBadge" style="display:none">
+          🔒 โหมดดูอย่างเดียว
+        </span>
+        <!-- User pill (แสดงหลัง login) -->
+        <div style="position:relative" id="userPillWrap" style="display:none">
+          <button class="user-pill" id="userPillBtn" onclick="toggleUserMenu()">
+            <span class="user-avatar" id="userAvatar">?</span>
+            <span id="userPillName">ผู้ใช้</span>
+          </button>
+          <div class="user-menu" id="userMenu">
+            <div class="user-menu-header">
+              <div class="user-menu-name" id="menuDisplayName">—</div>
+              <div class="user-menu-email" id="menuEmail">—</div>
+            <div id="menuPosition" style="display:none;font-size:11px;color:#94a3b8;margin-top:2px;line-height:1.4;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+            </div>
+            <button class="user-menu-item danger" onclick="authLogout()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              ออกจากระบบ
+            </button>
+          </div>
+        </div>
+        <!-- Login button (แสดงก่อน login) -->
+        <button class="btn btn-sm btn-primary" id="loginBtn" onclick="openAuthModal('login')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          เข้าสู่ระบบ
+        </button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div id="page-dashboard">
+
+        <!-- Quarter badge -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
+          <span style="font-size:12px;color:var(--text2)" id="quarterLabel">แสดงข้อมูล: ทุกไตรมาส</span>
+          <span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:99px;font-weight:600" id="quarterBadge">ปีงบประมาณ 2569</span>
+        </div>
+
+        <!-- Row 1: Budget metrics -->
+        <div class="metrics-top" style="margin-bottom:10px">
+          <div class="metric-card c-blue">
+            <div class="metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+            <div class="metric-label">โครงการทั้งหมด</div>
+            <div class="metric-value" id="m-total">—</div>
+            <div class="metric-sub" id="m-total-sub">4 ยุทธศาสตร์ + งบสำนักงาน</div>
+          </div>
+          <div class="metric-card c-green">
+            <div class="metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <div class="metric-label">งบประมาณรวม</div>
+            <div class="metric-value" id="m-budget">—</div>
+            <div class="metric-sub">บาท (ที่ได้รับอนุมัติ)</div>
+          </div>
+          <div class="metric-card c-amber">
+            <div class="metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+            <div class="metric-label">งบประมาณที่ใช้แล้ว</div>
+            <div class="metric-value" id="m-spent">—</div>
+            <div class="metric-sub" id="m-spent-sub">คิดเป็น 0% ของงบรวม</div>
+            <div class="metric-progress"><div class="metric-progress-track"><div class="metric-progress-fill" id="m-spent-bar" style="width:0%;background:var(--amber)"></div></div></div>
+          </div>
+          <div class="metric-card c-teal">
+            <div class="metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+            <div class="metric-label">งบประมาณคงเหลือ</div>
+            <div class="metric-value" id="m-remaining">—</div>
+            <div class="metric-sub" id="m-remaining-sub">บาท (ยังไม่ใช้จ่าย)</div>
+            <div class="metric-progress"><div class="metric-progress-track"><div class="metric-progress-fill" id="m-remaining-bar" style="width:100%;background:var(--s5)"></div></div></div>
+          </div>
+        </div>
+
+        <!-- Row 2: Budget plan -->
+        <div class="metrics-mid" style="margin-bottom:10px">
+          <div class="metric-card c-purple">
+            <div class="metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+            <div class="metric-label">แผนใช้งบ (PO + ใช้แล้ว)</div>
+            <div class="metric-value" id="m-plan">—</div>
+            <div class="metric-sub" id="m-plan-sub">คิดเป็น 0% ของงบรวม</div>
+            <div class="metric-progress"><div class="metric-progress-track"><div class="metric-progress-fill" id="m-plan-bar" style="width:0%;background:var(--purple)"></div></div></div>
+          </div>
+          <div class="metric-card c-amber">
+            <div class="metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+            <div class="metric-label">PO ที่ผูกพันงบ</div>
+            <div class="metric-value" id="m-po">—</div>
+            <div class="metric-sub">บาท (ผูกพันแล้ว)</div>
+          </div>
+          <div class="metric-card c-red">
+            <div class="metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div class="metric-label">งบคงเหลือสุทธิ (ไม่รวม PO)</div>
+            <div class="metric-value" id="m-net-remaining">—</div>
+            <div class="metric-sub">บาท (พร้อมใช้ได้)</div>
+          </div>
+        </div>
+
+        <!-- Budget Progress Visual -->
+        <div class="card" style="margin-bottom:10px;padding:1.125rem 1.25rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.625rem">
+            <span style="font-size:13px;font-weight:700">📋 แผนการใช้งบประมาณ ปีงบประมาณ พ.ศ. 2569</span>
+            <span style="font-size:11px;color:var(--text3)" id="budgetBarQuarter">ทุกไตรมาส</span>
+          </div>
+          <div id="budgetMegaBar" style="height:22px;border-radius:99px;overflow:hidden;display:flex;gap:0;background:var(--surface2);margin-bottom:.5rem"></div>
+          <div id="budgetBarLegend" style="display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--text2)"></div>
+        </div>
+
+        <!-- Status Pipeline -->
+        <div class="status-pipeline">
+          <div class="pipeline-item done" onclick="showPage('projects');setTimeout(()=>filterByStatus('done'),100)">
+            <div class="pipeline-dot done">✅</div>
+            <div class="pipeline-info">
+              <div class="pipeline-count done" id="p-done">—</div>
+              <div class="pipeline-label">เสร็จสิ้นโครงการ</div>
+            </div>
+          </div>
+          <div class="pipeline-item progress" onclick="showPage('projects');setTimeout(()=>filterByStatus('progress'),100)">
+            <div class="pipeline-dot progress">⏳</div>
+            <div class="pipeline-info">
+              <div class="pipeline-count progress" id="p-progress">—</div>
+              <div class="pipeline-label">อยู่ระหว่างดำเนินการ</div>
+            </div>
+          </div>
+          <div class="pipeline-item pending" onclick="showPage('projects');setTimeout(()=>filterByStatus('pending'),100)">
+            <div class="pipeline-dot pending">⭕</div>
+            <div class="pipeline-info">
+              <div class="pipeline-count pending" id="p-pending">—</div>
+              <div class="pipeline-label">ยังไม่ได้ดำเนินการ</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strategy bars -->
+        <div class="strategy-grid" id="strategy-summary"></div>
+
+        <!-- Budget Overview Row -->
+        <div class="charts-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:1.25rem">
+          <div class="card">
+            <div class="card-header"><span class="card-title">📊 สัดส่วนงบประมาณตามยุทธศาสตร์</span></div>
+            <div class="card-body" style="padding:.875rem">
+              <div style="position:relative;height:200px"><canvas id="chartBudget"></canvas><div id="chartBudgetCenter" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none"></div></div>
+              <div id="chartBudgetLegend" style="display:flex;flex-direction:column;gap:5px;margin-top:.75rem;font-size:11px;color:var(--text2)"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">🎯 สถานะโครงการ</span></div>
+            <div class="card-body" style="padding:.875rem">
+              <div style="position:relative;height:200px"><canvas id="chartStatus"></canvas></div>
+              <div id="statusLegend" style="display:flex;justify-content:center;gap:14px;margin-top:.75rem;font-size:11px"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">💰 แผนใช้งบ vs คงเหลือ</span></div>
+            <div class="card-body" style="padding:.875rem">
+              <div style="position:relative;height:200px"><canvas id="chartBudgetGauge"></canvas><div id="chartGaugeCenter" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none"></div></div>
+              <div id="gaugeLegend" style="display:flex;flex-direction:column;gap:5px;margin-top:.75rem;font-size:11px;color:var(--text2)"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Budget utilization chart -->
+        <div class="card" style="margin-bottom:1.25rem">
+          <div class="card-header">
+            <span class="card-title">📈 การใช้งบประมาณแยกตามยุทธศาสตร์</span>
+            <span style="font-size:11px;color:var(--text3)">งบอนุมัติ vs ใช้ไปแล้ว vs PO</span>
+          </div>
+          <div class="card-body">
+            <div style="position:relative;height:260px"><canvas id="chartUtilization"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Summary table -->
+        <div class="card" style="margin-bottom:1.25rem">
+          <div class="card-header">
+            <span class="card-title">ตารางสรุปผลการดำเนินงานรายยุทธศาสตร์</span>
+            <span style="font-size:11px;color:var(--text3)" id="summaryQuarterLabel">ปีงบประมาณ พ.ศ. 2569</span>
+          </div>
+          <div class="summary-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ยุทธศาสตร์</th>
+                  <th style="text-align:center">โครงการ</th>
+                  <th class="td-num">งบอนุมัติ (บาท)</th>
+                  <th class="td-num">ใช้ไป (บาท)</th>
+                  <th class="td-num">PO (บาท)</th>
+                  <th class="td-num">คงเหลือสุทธิ (บาท)</th>
+                  <th style="min-width:130px">% การใช้งบ</th>
+                  <th style="text-align:center">สถานะโครงการ</th>
+                </tr>
+              </thead>
+              <tbody id="summaryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===== COMMITTEE BUDGET SECTION ===== -->
+        <div class="card" style="margin-bottom:1.25rem" id="committeeSummaryCard">
+          <div class="card-header" style="flex-wrap:wrap;gap:.5rem">
+            <span class="card-title">🏛️ สรุปงบประมาณแยกตามอนุกรรมการ</span>
+            <span style="font-size:11px;color:var(--text3)" id="committeeQuarterLabel">ปีงบประมาณ พ.ศ. 2569</span>
+          </div>
+          <div class="card-body" style="padding:.875rem 1.25rem">
+
+            <!-- Committee metric cards -->
+            <div id="committeeMetrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem"></div>
+
+            <!-- Committee bar chart + table side by side -->
+            <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:14px;align-items:start">
+
+              <!-- Stacked bar chart -->
+              <div class="card" style="border:1px solid var(--border);padding:.875rem">
+                <div style="font-size:12px;font-weight:700;margin-bottom:.75rem;color:var(--text2)">สัดส่วนงบอนุมัติ</div>
+                <div style="position:relative;height:220px"><canvas id="chartCommitteeBudget"></canvas></div>
+                <div id="chartCommitteeLegend" style="display:flex;flex-direction:column;gap:5px;margin-top:.75rem"></div>
+              </div>
+
+              <!-- Detail table -->
+              <div style="overflow-x:auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="min-width:160px">อนุกรรมการ</th>
+                      <th style="text-align:center">โครงการ</th>
+                      <th class="td-num">งบอนุมัติ (บาท)</th>
+                      <th class="td-num">ใช้ไป (บาท)</th>
+                      <th class="td-num">PO (บาท)</th>
+                      <th class="td-num">คงเหลือสุทธิ (บาท)</th>
+                      <th style="min-width:110px">% ใช้งบ</th>
+                      <th style="text-align:center">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="committeeTableBody"></tbody>
+                </table>
+              </div>
+
+            </div><!-- /grid -->
+
+          </div>
+        </div><!-- /committee card -->
+
+      </div><!-- /page-dashboard -->
+
+      <!-- ===== PROJECTS ===== -->
+      <div id="page-projects" style="display:none">
+        <div class="table-wrap">
+          <div class="toolbar">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 ค้นหาชื่อโครงการ..." oninput="renderTable()">
+            <select id="filterStrategy" class="select-filter" onchange="renderTable()">
+              <option value="">ยุทธศาสตร์ทั้งหมด</option>
+              <option value="1">ยุทธศาสตร์ที่ 1</option>
+              <option value="2">ยุทธศาสตร์ที่ 2</option>
+              <option value="3">ยุทธศาสตร์ที่ 3</option>
+              <option value="4">ยุทธศาสตร์ที่ 4</option>
+              <option value="5">งบบริหารสำนักงาน</option>
+            </select>
+            <select id="filterStatus" class="select-filter" onchange="renderTable()">
+              <option value="">สถานะทั้งหมด</option>
+              <option value="done">✅ แล้วเสร็จ</option>
+              <option value="progress">⏳ อยู่ระหว่างดำเนิน</option>
+              <option value="pending">⭕ ยังไม่เริ่ม</option>
+            </select>
+            <select id="filterCommittee" class="select-filter" onchange="renderTable()" style="max-width:210px">
+              <option value="">อนุกรรมการทั้งหมด</option>
+              <option value="นโยบายและแผนงาน">ด้านนโยบายและแผนงาน</option>
+              <option value="วิชาการ">ด้านวิชาการ</option>
+              <option value="เทคนิคและเทคโนโลยีดิจิทัล">ด้านเทคนิคและเทคโนโลยีดิจิทัล</option>
+              <option value="บริหารงานบุคคล">ด้านบริหารงานบุคคล</option>
+              <option value="__none__">ไม่ได้ระบุอนุกรรมการ</option>
+            </select>
+            <select id="filterQuarterTable" class="select-filter" onchange="renderTable()">
+              <option value="">📅 ทุกไตรมาส</option>
+              <option value="1">ไตรมาส 1 (ต.ค.–ธ.ค.)</option>
+              <option value="2">ไตรมาส 2 (ม.ค.–มี.ค.)</option>
+              <option value="3">ไตรมาส 3 (เม.ย.–มิ.ย.)</option>
+              <option value="4">ไตรมาส 4 (ก.ค.–ก.ย.)</option>
+            </select>
+            <button class="btn btn-sm btn-primary" id="tableAddBtn" onclick="openAdd()" style="display:none">+ เพิ่มโครงการ</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:32px">#</th>
+                  <th>ชื่อโครงการ <span style="font-weight:400;font-size:9px;color:var(--text3);letter-spacing:0;text-transform:none">(คลิกบรรทัดเพื่อดูรายละเอียด)</span></th>
+                  <th>ยุทธศาสตร์</th>
+                  <th class="td-num">งบอนุมัติ (บาท)</th>
+                  <th class="td-num">ใช้ไป (บาท)</th>
+                  <th class="td-num">PO (บาท)</th>
+                  <th class="td-num">ใช้+PO (บาท)</th>
+                  <th class="td-num">คงเหลือสุทธิ</th>
+                  <th>สถานะ</th>
+                  <th>ตัวชี้วัด</th>
+                  <th>ผู้แก้ไขล่าสุด</th>
+                  <th style="width:88px">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div class="pagination-info" id="paginationInfo"></div>
+            <div style="display:flex;gap:4px" id="paginationBtns"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== GOOGLE SHEETS ===== -->
+      <div id="page-gsheet" style="display:none">
+        <div class="gs-box">
+          <div class="gs-box-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            เชื่อมต่อ Google Apps Script (GAS)
+          </div>
+          <div class="gs-box-desc">
+            วาง URL ของ Google Apps Script Web App ที่นี่<br>
+            (ได้จาก Apps Script → Deploy → New deployment → Web app)<br>
+            <code>https://script.google.com/macros/s/<strong>[DEPLOYMENT_ID]</strong>/exec</code>
+          </div>
+          <div class="gs-row">
+            <input type="text" id="gasUrlInput" class="form-input" placeholder="https://script.google.com/macros/s/AKfycbyySm67KoRS37gE0OCERDxTMqDvsDnAgSL1znjL4XNexQbtRTgkFEY8K0_1rnYLxVc7hg/exec" style="max-width:520px">
+            <button class="btn btn-primary btn-sm" onclick="applyGasUrl()">✔ ตั้งค่า URL</button>
+          </div>
+          <div id="gasUrlStatus" style="margin-top:8px;font-size:12px;color:var(--text3)">สถานะ: ยังไม่ได้ตั้งค่า GAS URL</div>
+        </div>
+        <div class="gs-box">
+          <div class="gs-box-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5.1L1 10"/></svg>
+            Sync ข้อมูลกับ Google Sheet
+          </div>
+          <div class="gs-box-desc">ส่งข้อมูลโครงการทั้งหมดที่มีอยู่ขึ้น Google Sheet ทันที (เขียนทับข้อมูลเดิม)</div>
+          <div class="gs-row">
+            <button class="btn btn-primary btn-sm" onclick="syncAllToSheet()">☁ Sync ทั้งหมดขึ้น Sheet</button>
+            <button class="btn btn-sm" onclick="loadFromSheet()">⬇ โหลดจาก Sheet</button>
+          </div>
+          <div id="gsStatus"></div>
+        </div>
+        <div class="gs-box">
+          <div class="gs-box-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            ส่งออกข้อมูล (CSV)
+          </div>
+          <div class="gs-box-desc">ดาวน์โหลดข้อมูลโครงการทั้งหมดเป็น CSV แล้วนำเข้า Google Sheets ได้เลย</div>
+          <div class="gs-row">
+            <button class="btn btn-success btn-sm" onclick="exportCSV()">⬇ ดาวน์โหลด CSV</button>
+          </div>
+        </div>
+        <div class="gs-box">
+          <div class="gs-box-title">รูปแบบข้อมูลที่รองรับ</div>
+          <div class="gs-box-desc">
+            Sheet ควรมีหัวคอลัมน์แถวแรกดังนี้:<br><br>
+            <code>id | name | strategy | budget | spent | po | status | result | kpi | problems | solutions | quarter | owner | committees | image_count | images_json</code><br><br>
+            • <code>strategy</code> = 1, 2, 3, 4 หรือ 5 (งบบริหารสำนักงาน)<br>
+            • <code>budget, spent, po</code> = จำนวนเงิน (ตัวเลข ไม่ใส่ comma)<br>
+            • <code>status</code> = done / progress / pending<br>
+            • <code>kpi</code> = ตัวชี้วัด คั่นด้วย | (pipe)<br>
+            • <code>quarter</code> = 1, 2, 3, 4 หรือ all<br>
+            • <code>owner</code> = ผู้รับผิดชอบ / หน่วยงาน<br>
+            • <code>committees</code> = JSON array เช่น ["นโยบายและแผนงาน","วิชาการ"]<br>
+            • <code>images_json</code> = JSON array ของรูปภาพ (base64)
+          </div>
+        </div>
+        <div class="gs-box" style="background:#fffbeb;border-color:#fde68a">
+          <div class="gs-box-title" style="color:#92400e">📸 วิธีการส่งรูปภาพขึ้น Google Sheet</div>
+          <div class="gs-box-desc" style="color:#78350f">
+            รูปภาพจะถูกแปลงเป็น Base64 และส่งไปพร้อมข้อมูลโครงการผ่าน GAS<br>
+            Google Apps Script ของคุณต้องรองรับ field <code>images</code> ใน payload<br><br>
+            <strong>ตัวอย่าง GAS Code ที่รองรับรูปภาพ:</strong><br><br>
+            <code style="display:block;white-space:pre-wrap;line-height:1.8;font-size:10.5px">function doPost(e) {
+  const payload = JSON.parse(e.postData.contents);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet()
+                  .getSheetByName('Projects') || 
+                SpreadsheetApp.getActiveSpreadsheet()
+                  .getSheets()[0];
+  
+  if (payload.action === 'save' || payload.action === 'update') {
+    const d = payload.data;
+    const images = d.images || [];
+    // บันทึกจำนวนรูปและ JSON ลง Sheet
+    const imgCount = images.length;
+    const imgJson = JSON.stringify(images.map(i=>({name:i.name,dataUrl:i.dataUrl})));
+    
+    // หาแถวที่มี id ตรงกัน หรือเพิ่มแถวใหม่
+    const data = sheet.getDataRange().getValues();
+    let rowIdx = -1;
+    for(let i=1;i<data.length;i++){
+      if(data[i][0]==d.id){ rowIdx=i+1; break; }
+    }
+    const row = [d.id,d.name,d.strategy,d.budget,d.spent,d.po,
+                 d.status,d.result,(d.kpi||[]).join('|'),
+                 d.problems,d.solutions,d.quarter,imgCount,imgJson];
+    if(rowIdx>0) sheet.getRange(rowIdx,1,1,row.length).setValues([row]);
+    else sheet.appendRow(row);
+    return ContentService.createTextOutput(
+      JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+  }
+  // ... (action อื่นๆ เช่น getAll, delete, bulkSave)
+}</code>
+          </div>
+          <div class="gs-row" style="margin-top:.5rem">
+            <button class="btn btn-sm" style="background:#fef3c7;border-color:#fde68a;color:#92400e" onclick="copyGASTemplate()">📋 คัดลอก GAS Template</button>
+          </div>
+          <div id="gasTemplateCopyStatus" style="margin-top:6px;font-size:11px;color:var(--green)"></div>
+        </div>
+        <div class="gs-box">
+          <div class="gs-box-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            รีเซ็ตข้อมูลกลับค่าเริ่มต้น
+          </div>
+          <div class="gs-box-desc">ล้างข้อมูลที่บันทึกใน Browser และโหลดข้อมูลโครงการเริ่มต้นใหม่<br>⚠️ การกระทำนี้จะลบการแก้ไขทั้งหมด</div>
+          <div class="gs-row">
+            <button class="btn btn-danger btn-sm" onclick="resetToDefault()">↺ รีเซ็ตข้อมูล</button>
+          </div>
+        </div>
+        <div class="gs-box" style="background:var(--accent-light);border-color:#b8cff0">
+          <div class="gs-box-title" style="color:var(--accent)">💾 การบันทึกอัตโนมัติ</div>
+          <div class="gs-box-desc">ข้อมูลโครงการจะถูกบันทึกลงใน Browser อัตโนมัติทุกครั้งที่มีการเพิ่ม แก้ไข หรือลบโครงการ<br>เมื่อตั้งค่า GAS URL แล้ว การเปลี่ยนแปลงทุกครั้งจะ Sync ขึ้น Google Sheet โดยอัตโนมัติ</div>
+        </div>
+      </div>
+
+      <!-- ===== LIVE TRACKING ===== -->
+      <div id="page-livetracking" style="display:none">
+        <div class="lt-header">
+          <div>
+            <h2>📡 ประวัติการแก้ไข</h2>
+            <div class="sub">ระบบติดตามผลการดำเนินงานแบบเรียลไทม์ · อัปเดตอัตโนมัติทุก <span id="ltIntervalLabel">30</span> วินาที</div>
+          </div>
+          <div class="lt-pulse">
+            <span class="lt-pulse-dot"></span>
+            <span id="ltLiveStatus">กำลังเชื่อมต่อ...</span>
+          </div>
+        </div>
+
+        <div class="lt-stat-grid" id="ltStatGrid">
+          <div class="lt-stat">
+            <div class="lt-stat-label">โครงการทั้งหมด</div>
+            <div class="lt-stat-value" id="ltStatTotal">—</div>
+            <div class="lt-stat-delta zero" id="ltStatTotalDelta">±0</div>
+          </div>
+          <div class="lt-stat done">
+            <div class="lt-stat-label">✅ เสร็จสิ้น</div>
+            <div class="lt-stat-value" id="ltStatDone">—</div>
+            <div class="lt-stat-delta zero" id="ltStatDoneDelta">±0</div>
+          </div>
+          <div class="lt-stat progress">
+            <div class="lt-stat-label">⏳ กำลังดำเนินการ</div>
+            <div class="lt-stat-value" id="ltStatProgress">—</div>
+            <div class="lt-stat-delta zero" id="ltStatProgressDelta">±0</div>
+          </div>
+          <div class="lt-stat pending">
+            <div class="lt-stat-label">⏸ ยังไม่เริ่ม</div>
+            <div class="lt-stat-value" id="ltStatPending">—</div>
+            <div class="lt-stat-delta zero" id="ltStatPendingDelta">±0</div>
+          </div>
+        </div>
+
+        <div class="lt-feed">
+          <div class="lt-feed-header">
+            <div>
+              <div class="lt-feed-title">📋 ความเคลื่อนไหวล่าสุด</div>
+              <div class="lt-feed-meta">
+                อัปเดตล่าสุด: <b id="ltLastSync">—</b> ·
+                ใช้ข้อมูล: <b id="ltDataSource">Local</b>
+              </div>
+            </div>
+            <div class="lt-controls">
+              <label class="lt-toggle"><input type="checkbox" id="ltAutoChk" checked onchange="toggleLiveAutoRefresh()"> เปิดอัตโนมัติ</label>
+              <button class="btn btn-sm btn-primary" onclick="forceLiveSync()">🔄 รีเฟรชเดี๋ยวนี้</button>
+            </div>
+          </div>
+          <div class="lt-feed-list" id="ltFeedList">
+            <div class="lt-empty">⏳ กำลังรอข้อมูล... แตะ "รีเฟรชเดี๋ยวนี้" เพื่อโหลดล่าสุด</div>
+          </div>
+        </div>
+      </div><!-- /page-livetracking -->
+
+      <!-- ===== RISK MANAGEMENT PAGE ===== -->
+      <div id="page-risk" style="display:none">
+
+        <!-- Header banner -->
+        <div class="rm-header">
+          <div>
+            <h2>🛡️ การบริหารความเสี่ยง</h2>
+            <div class="sub">ระบบบริหารและติดตามความเสี่ยงโครงการ · ปีงบประมาณ พ.ศ. 2569</div>
+          </div>
+          <div class="rm-header-right">
+            <select class="quarter-select" id="riskQuarterFilter" onchange="renderRiskTable()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.4);color:#fff;font-size:12px">
+              <option value="">📅 ทุกไตรมาส</option>
+              <option value="1">ไตรมาส 1 (ต.ค.–ธ.ค.)</option>
+              <option value="2">ไตรมาส 2 (ม.ค.–มี.ค.)</option>
+              <option value="3">ไตรมาส 3 (เม.ย.–มิ.ย.)</option>
+              <option value="4">ไตรมาส 4 (ก.ค.–ก.ย.)</option>
+            </select>
+            <button class="btn btn-sm" onclick="exportRiskReportPDF()"
+              style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4);color:#fff">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Export PDF
+            </button>
+            <button class="btn btn-sm" onclick="openRiskForm()" id="riskAddBtn"
+              style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4);color:#fff;display:none">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              บันทึกความเสี่ยงใหม่
+            </button>
+          </div>
+        </div>
+
+        <!-- Google Sheets sync bar -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;margin-bottom:1.25rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:var(--shadow)">
+          <span style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;color:var(--text2)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            เชื่อมต่อ Google Sheet:
+          </span>
+          <button class="btn btn-sm btn-primary" onclick="syncRisksToSheet()">☁ Sync ขึ้น Sheet</button>
+          <button class="btn btn-sm" onclick="loadRisksFromSheet()">⬇ โหลดจาก Sheet</button>
+          <button class="btn btn-sm btn-success" onclick="exportRisksCSV()">⬇ ดาวน์โหลด CSV</button>
+          <button class="btn btn-sm" onclick="toggleRiskGasHelp()" style="margin-left:auto;color:var(--text2)">📋 โค้ด GAS สำหรับ Risk Sheet</button>
+        </div>
+        <div id="rmGsStatus"></div>
+
+        <!-- GAS code help (collapsible) -->
+        <div id="riskGasHelp" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem">
+          <div style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:6px">📋 วิธีเชื่อมต่อ Sheet ความเสี่ยง (Risks)</div>
+          <div style="font-size:13px;color:#78350f;line-height:1.8;margin-bottom:10px">
+            ระบบจะสร้าง Sheet ชื่อ <code>Risks</code> ให้อัตโนมัติ ไม่ต้องสร้างเอง<br>
+            <b>ขั้นตอน:</b> 1) กดปุ่ม "คัดลอกโค้ด" ด้านล่าง → 2) เปิด Google Apps Script เดิมของคุณ →
+            3) วางโค้ดต่อท้าย <code>Code.gs</code> → 4) เพิ่ม 4 บรรทัด action ใน <code>doGet</code> และ <code>doPost</code> (มีบอกไว้ท้ายโค้ด) →
+            5) Deploy ใหม่ → 6) กลับมากด "Sync ขึ้น Sheet"
+          </div>
+          <button class="btn btn-sm" style="background:#fef3c7;border-color:#fde68a;color:#92400e" onclick="copyRiskGASTemplate()">📋 คัดลอกโค้ด Risk GAS</button>
+          <div id="riskGasCopyStatus" style="margin-top:6px;font-size:12px;color:var(--green)"></div>
+          <pre id="riskGasCodeBlock" style="margin-top:10px;background:#1c2333;color:#e2e8f0;padding:12px;border-radius:8px;font-size:10.5px;line-height:1.6;overflow-x:auto;max-height:280px;white-space:pre"></pre>
+        </div>
+
+        <!-- Metrics -->
+        <div class="rm-metrics" id="rmMetrics">
+          <div class="rm-metric total">
+            <div class="rm-metric-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+            <div class="rm-metric-label">ความเสี่ยงทั้งหมด</div>
+            <div class="rm-metric-value" id="rmTotal">—</div>
+          </div>
+          <div class="rm-metric high">
+            <div class="rm-metric-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+            <div class="rm-metric-label">ความเสี่ยงสูงมาก/สูง</div>
+            <div class="rm-metric-value" id="rmHigh">—</div>
+          </div>
+          <div class="rm-metric med">
+            <div class="rm-metric-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div class="rm-metric-label">ความเสี่ยงปานกลาง</div>
+            <div class="rm-metric-value" id="rmMed">—</div>
+          </div>
+          <div class="rm-metric low">
+            <div class="rm-metric-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="rm-metric-label">ความเสี่ยงต่ำ</div>
+            <div class="rm-metric-value" id="rmLow">—</div>
+          </div>
+          <div class="rm-metric done">
+            <div class="rm-metric-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+            <div class="rm-metric-label">ควบคุม/ปิดแล้ว</div>
+            <div class="rm-metric-value" id="rmDone">—</div>
+          </div>
+        </div>
+
+        <!-- Matrix + Summary side by side -->
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;margin-bottom:1.25rem;align-items:start">
+
+          <!-- Heat Map Matrix -->
+          <div class="rm-matrix-wrap" style="min-width:300px">
+            <div class="rm-matrix-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              Risk Heat Map (โอกาส × ผลกระทบ)
+            </div>
+            <!-- Matrix will be built by JS -->
+            <div id="rmMatrixGrid" class="rm-matrix-grid" style="max-width:340px"></div>
+            <div style="display:flex;gap:16px;margin-top:8px;justify-content:center">
+              <div style="font-size:10px;color:var(--text3);text-align:center">→ ผลกระทบ (Impact)</div>
+              <div style="font-size:10px;color:var(--text3);text-align:center">↑ โอกาส (Likelihood)</div>
+            </div>
+            <div class="rm-matrix-legend">
+              <div class="rm-legend-item"><span class="rm-legend-dot" style="background:#dcfce7;border:1px solid #86efac"></span>ต่ำ (1-4)</div>
+              <div class="rm-legend-item"><span class="rm-legend-dot" style="background:#fef9c3;border:1px solid #fde047"></span>ปานกลาง (5-9)</div>
+              <div class="rm-legend-item"><span class="rm-legend-dot" style="background:#ffedd5;border:1px solid #fdba74"></span>สูง (10-15)</div>
+              <div class="rm-legend-item"><span class="rm-legend-dot" style="background:#fee2e2;border:1px solid #fca5a5"></span>สูงมาก (16-25)</div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;border-top:1px solid var(--border);padding-top:8px">
+              ตัวเลขกลางช่อง = <b>คะแนนความเสี่ยง</b> (โอกาส × ผลกระทบ)<br>
+              <span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;background:#1c2333;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:0 4px;vertical-align:middle">N</span>
+              = จำนวนความเสี่ยงในช่องนั้น (คลิกเพื่อกรอง)
+            </div>
+          </div>
+
+          <!-- Category breakdown -->
+          <div class="rm-matrix-wrap" style="height:100%">
+            <div class="rm-matrix-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              สรุปความเสี่ยงตามประเภท
+            </div>
+            <div id="rmCategoryBreakdown" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+
+        </div>
+
+        <!-- Risk Table -->
+        <div class="rm-table-wrap">
+          <div class="rm-toolbar">
+            <!-- View mode toggle -->
+            <div style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:3px;gap:2px">
+              <button class="rm-view-btn active" id="rmViewProjectBtn" onclick="setRiskView('project')" title="มุมมองรายโครงการ">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>
+                รายโครงการ
+              </button>
+              <button class="rm-view-btn" id="rmViewFlatBtn" onclick="setRiskView('flat')" title="มุมมองตารางทั้งหมด">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                ตารางทั้งหมด
+              </button>
+            </div>
+            <input type="text" class="search-input" id="rmSearch" placeholder="🔍 ค้นหาความเสี่ยง..." oninput="renderRiskTable()" style="flex:1;min-width:140px;max-width:240px">
+            <select class="select-filter" id="rmFilterLevel" onchange="renderRiskTable()">
+              <option value="">ระดับทั้งหมด</option>
+              <option value="veryhigh">🔴 สูงมาก (16-25)</option>
+              <option value="high">🟠 สูง (10-15)</option>
+              <option value="medium">🟡 ปานกลาง (5-9)</option>
+              <option value="low">🟢 ต่ำ (1-4)</option>
+            </select>
+            <select class="select-filter" id="rmFilterCategory" onchange="renderRiskTable()">
+              <option value="">ประเภททั้งหมด</option>
+              <option value="strategic">ด้านยุทธศาสตร์</option>
+              <option value="operational">ด้านปฏิบัติการ</option>
+              <option value="financial">ด้านการเงิน</option>
+              <option value="compliance">ด้านกฎระเบียบ</option>
+              <option value="reputation">ด้านชื่อเสียง</option>
+              <option value="other">อื่นๆ</option>
+            </select>
+            <select class="select-filter" id="rmFilterStatus" onchange="renderRiskTable()">
+              <option value="">สถานะทั้งหมด</option>
+              <option value="open">ยังไม่ดำเนินการ</option>
+              <option value="inprogress">กำลังดำเนินการ</option>
+              <option value="controlled">ควบคุมได้แล้ว</option>
+              <option value="closed">ปิดแล้ว</option>
+            </select>
+            <select class="select-filter" id="rmFilterStrategy" onchange="renderRiskTable()">
+              <option value="">ยุทธศาสตร์ทั้งหมด</option>
+              <option value="1">ยุทธศาสตร์ที่ 1</option>
+              <option value="2">ยุทธศาสตร์ที่ 2</option>
+              <option value="3">ยุทธศาสตร์ที่ 3</option>
+              <option value="4">ยุทธศาสตร์ที่ 4</option>
+              <option value="5">งบสำนักงาน</option>
+            </select>
+          </div>
+
+          <!-- VIEW A: Grouped by project -->
+          <div id="rmProjectView" style="padding:1rem 1.25rem"></div>
+
+          <!-- VIEW B: Flat table -->
+          <div id="rmFlatView" style="overflow-x:auto;display:none">
+            <table class="rm-table">
+              <thead>
+                <tr>
+                  <th style="width:28px">#</th>
+                  <th style="min-width:200px">ความเสี่ยง / โครงการ</th>
+                  <th>ประเภท</th>
+                  <th>ยุทธศาสตร์</th>
+                  <th style="text-align:center">โอกาส</th>
+                  <th style="text-align:center">ผลกระทบ</th>
+                  <th style="text-align:center;min-width:70px">คะแนน</th>
+                  <th style="min-width:90px">ระดับ</th>
+                  <th>คงเหลือ</th>
+                  <th>สถานะ</th>
+                  <th style="min-width:160px">มาตรการควบคุม</th>
+                  <th>กำหนดเสร็จ</th>
+                  <th>ผู้รับผิดชอบ</th>
+                  <th style="text-align:center;width:80px">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="rmTableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="rmPagination" style="display:none">
+            <div class="pagination-info" id="rmPaginationInfo"></div>
+            <div style="display:flex;gap:4px" id="rmPaginationBtns"></div>
+          </div>
+          <!-- Empty state -->
+          <div id="rmEmptyState" class="empty-state" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <p id="rmEmptyMsg">ยังไม่มีข้อมูลความเสี่ยง · กดปุ่ม "บันทึกความเสี่ยงใหม่" เพื่อเริ่มต้น</p>
+          </div>
+        </div>
+
+      </div><!-- /page-risk -->
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- Mobile sidebar backdrop -->
+<div id="sidebarBackdrop" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:49"></div>
+
+<!-- ===== RISK MODAL: Add/Edit ===== -->
+<div class="modal-overlay" id="riskModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;align-items:center;justify-content:center;padding:1rem">
+  <div class="modal" style="max-width:680px;width:100%;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="riskModalTitle">🛡️ บันทึกความเสี่ยงใหม่</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">กรอกข้อมูลความเสี่ยงและมาตรการควบคุม</div>
+      </div>
+      <button class="btn btn-sm" onclick="closeRiskModal()" style="color:var(--text2)">✕</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto">
+
+      <!-- Section 1: ข้อมูลพื้นฐาน -->
+      <div class="form-section">1 · ข้อมูลพื้นฐาน</div>
+      <div class="rm-form-grid">
+        <div class="form-field full">
+          <label class="form-label">โครงการที่เกี่ยวข้อง</label>
+          <input type="text" class="form-input" id="riskProject" list="riskProjectList"
+                 placeholder="เลือกจากรายการ หรือพิมพ์ชื่อโครงการเอง..."
+                 oninput="onRiskProjectChange()" autocomplete="off">
+          <datalist id="riskProjectList"></datalist>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">💡 เลือกโครงการแล้วยุทธศาสตร์จะถูกเติมให้อัตโนมัติ (พิมพ์เองได้หากไม่มีในรายการ)</div>
+        </div>
+        <div class="form-field full">
+          <label class="form-label">ชื่อ / รายละเอียดความเสี่ยง <span class="required">*</span></label>
+          <textarea class="form-textarea" id="riskName" placeholder="อธิบายความเสี่ยงที่พบหรือคาดว่าจะเกิดขึ้น..." style="min-height:60px;resize:vertical"></textarea>
+        </div>
+        <div class="form-field">
+          <label class="form-label">ประเภทความเสี่ยง <span class="required">*</span></label>
+          <select class="form-select" id="riskCategory">
+            <option value="">-- เลือกประเภท --</option>
+            <option value="strategic">ด้านยุทธศาสตร์</option>
+            <option value="operational">ด้านปฏิบัติการ</option>
+            <option value="financial">ด้านการเงิน</option>
+            <option value="compliance">ด้านกฎระเบียบ/กฎหมาย</option>
+            <option value="reputation">ด้านชื่อเสียง/ภาพลักษณ์</option>
+            <option value="other">อื่นๆ</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">ยุทธศาสตร์ที่เกี่ยวข้อง</label>
+          <select class="form-select" id="riskStrategy">
+            <option value="">-- ไม่ระบุ --</option>
+            <option value="1">ยุทธศาสตร์ที่ 1 (การพัฒนาการจัดการศึกษาทางไกล)</option>
+            <option value="2">ยุทธศาสตร์ที่ 2 (การพัฒนาครูและโรงเรียนต้นทาง)</option>
+            <option value="3">ยุทธศาสตร์ที่ 3 (การพัฒนาครูและโรงเรียนปลายทาง)</option>
+            <option value="4">ยุทธศาสตร์ที่ 4 (การพัฒนาระบบการบริหารจัดการ)</option>
+            <option value="5">งบบริหารสำนักงาน</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">ไตรมาส <span class="required">*</span></label>
+          <select class="form-select" id="riskQuarter">
+            <option value="all">ตลอดทั้งปี</option>
+            <option value="1">ไตรมาส 1 (ต.ค.–ธ.ค. 68)</option>
+            <option value="2">ไตรมาส 2 (ม.ค.–มี.ค. 69)</option>
+            <option value="3">ไตรมาส 3 (เม.ย.–มิ.ย. 69)</option>
+            <option value="4">ไตรมาส 4 (ก.ค.–ก.ย. 69)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">ผู้รับผิดชอบ</label>
+          <input type="text" class="form-input" id="riskOwner" placeholder="ชื่อ / ฝ่าย ที่รับผิดชอบ">
+        </div>
+      </div>
+
+      <!-- Section 2: การประเมินความเสี่ยง -->
+      <div class="form-section" style="margin-top:1rem">2 · การประเมินความเสี่ยง</div>
+      <div class="rm-slider-row">
+        <div class="rm-slider-box">
+          <label class="form-label">โอกาสที่จะเกิด (Likelihood)</label>
+          <input type="range" class="rm-range" id="riskLikelihood" min="1" max="5" value="3" oninput="updateRiskScore()">
+          <div class="rm-slider-val">
+            <span>น้อยมาก (1)</span>
+            <span style="font-weight:700;color:var(--accent)" id="riskLikelihoodVal">3 – ปานกลาง</span>
+            <span>แน่นอน (5)</span>
+          </div>
+        </div>
+        <div class="rm-slider-box">
+          <label class="form-label">ผลกระทบ (Impact)</label>
+          <input type="range" class="rm-range" id="riskImpact" min="1" max="5" value="3" oninput="updateRiskScore()">
+          <div class="rm-slider-val">
+            <span>น้อยมาก (1)</span>
+            <span style="font-weight:700;color:var(--accent)" id="riskImpactVal">3 – ปานกลาง</span>
+            <span>สูงมาก (5)</span>
+          </div>
+        </div>
+      </div>
+      <!-- Score preview -->
+      <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="rm-score-preview" id="riskScorePreview">
+          <div class="rm-score-num" id="riskScoreNum" style="color:var(--amber)">9</div>
+          <div class="rm-score-label" id="riskScoreLabel" style="color:var(--amber)">🟡 ระดับปานกลาง</div>
+          <div style="font-size:11px;color:var(--text3)">โอกาส 3 × ผลกระทบ 3</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:var(--radius);padding:.875rem 1rem;border:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.8">
+          <b style="color:var(--text)">เกณฑ์ระดับความเสี่ยง:</b><br>
+          🟢 ต่ำ: 1–4 &nbsp;|&nbsp; 🟡 ปานกลาง: 5–9<br>
+          🟠 สูง: 10–15 &nbsp;|&nbsp; 🔴 สูงมาก: 16–25
+        </div>
+      </div>
+
+      <!-- Section 3: มาตรการ/สถานะ -->
+      <div class="form-section" style="margin-top:1rem">3 · มาตรการควบคุมและการติดตาม</div>
+      <div class="rm-form-grid">
+        <div class="form-field full">
+          <label class="form-label">มาตรการควบคุม / แผนรับมือ</label>
+          <textarea class="form-textarea" id="riskControl" placeholder="ระบุมาตรการ วิธีการ หรือแผนรับมือที่ดำเนินการหรือวางแผนไว้..." style="min-height:72px;resize:vertical"></textarea>
+        </div>
+        <div class="form-field full">
+          <label class="form-label">แผนเผชิญเหตุ (Contingency Plan)</label>
+          <textarea class="form-textarea" id="riskContingency" placeholder="หากความเสี่ยงเกิดขึ้นจริง จะดำเนินการอย่างไร..." style="min-height:60px;resize:vertical"></textarea>
+        </div>
+        <div class="form-field">
+          <label class="form-label">สถานะการจัดการ <span class="required">*</span></label>
+          <select class="form-select" id="riskStatus">
+            <option value="open">ยังไม่ดำเนินการ</option>
+            <option value="inprogress">กำลังดำเนินการ</option>
+            <option value="controlled">ควบคุมได้แล้ว</option>
+            <option value="closed">ปิดแล้ว</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">ความเสี่ยงคงเหลือหลังควบคุม (Residual)</label>
+          <select class="form-select" id="riskResidual">
+            <option value="">-- ยังไม่ประเมิน --</option>
+            <option value="low">🟢 ต่ำ — ยอมรับได้</option>
+            <option value="medium">🟡 ปานกลาง — ต้องเฝ้าระวัง</option>
+            <option value="high">🟠 สูง — ต้องควบคุมเพิ่ม</option>
+            <option value="veryhigh">🔴 สูงมาก — ต้องเร่งจัดการ</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">กำหนดวันแล้วเสร็จ (Due Date)</label>
+          <input type="date" class="form-input" id="riskDueDate">
+        </div>
+        <div class="form-field">
+          <label class="form-label">วันที่ทบทวนล่าสุด</label>
+          <input type="date" class="form-input" id="riskReviewDate">
+        </div>
+        <div class="form-field full">
+          <label class="form-label">หมายเหตุเพิ่มเติม</label>
+          <input type="text" class="form-input" id="riskNote" placeholder="ข้อมูลเพิ่มเติม (ถ้ามี)">
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeRiskModal()">ยกเลิก</button>
+      <button class="btn btn-sm btn-primary" onclick="saveRisk()" id="riskSaveBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        บันทึกความเสี่ยง
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Risk Delete Confirm Modal -->
+<div class="modal-overlay" id="riskDeleteOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:401;align-items:center;justify-content:center;padding:1rem">
+  <div class="modal" style="max-width:400px;width:100%">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--red)">⚠️ ยืนยันการลบ</div>
+      <button class="btn btn-sm" onclick="closeRiskDelete()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text2);font-size:14px;line-height:1.7">คุณต้องการลบรายการความเสี่ยงนี้ใช่หรือไม่?<br><strong id="riskDeleteName" style="color:var(--text)"></strong></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeRiskDelete()">ยกเลิก</button>
+      <button class="btn btn-sm btn-danger" onclick="confirmDeleteRisk()">🗑️ ลบรายการ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RISK DETAIL / PREVIEW MODAL ===== -->
+<div class="modal-overlay" id="riskDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:402;align-items:center;justify-content:center;padding:1rem">
+  <div class="modal" style="max-width:720px;width:100%;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal-header" id="riskDetailHeader" style="border-bottom:1px solid var(--border)">
+      <div style="flex:1;min-width:0">
+        <div class="modal-title" id="riskDetailTitle" style="font-size:16px;line-height:1.4">—</div>
+        <div id="riskDetailProject" style="font-size:12px;color:var(--accent);margin-top:3px"></div>
+      </div>
+      <button class="btn btn-sm" onclick="closeRiskDetail()" style="color:var(--text2)">✕</button>
+    </div>
+    <div class="modal-body" id="riskDetailBody" style="overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeRiskDetail()">ปิด</button>
+      <button class="btn btn-sm" onclick="exportSingleRiskPDF()" style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;border-color:transparent">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Export PDF
+      </button>
+      <button class="btn btn-sm btn-primary" id="riskDetailEditBtn" onclick="editFromDetail()" style="display:none">✏️ แก้ไข</button>
+    </div>
+  </div>
+</div>
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-icon"><img src="https://dltv.ac.th/upload/data/users/0/316/CMS/images/logo%20dlf%20%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C.png" alt="Logo" width="100"></div>
+      <div class="auth-logo-title">ระบบรายงานผลการดำเนินงาน</div>
+      <div class="auth-logo-sub">มูลนิธิการศึกษาทางไกลผ่านดาวเทียม · ปีงบประมาณ พ.ศ. 2569</div>
+    </div>
+    <div class="auth-tabs" id="authTabsBar">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">เข้าสู่ระบบ</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">ลงทะเบียน</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="authLoginForm" class="auth-form">
+      <div class="auth-error" id="loginError"></div>
+      <div class="auth-field">
+        <label class="auth-label">อีเมล</label>
+        <input type="email" class="auth-input" id="loginEmail" placeholder="your@email.com" autocomplete="email"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('loginPassword').focus();}">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">รหัสผ่าน</label>
+        <div class="password-wrapper">
+          <input type="password" class="auth-input has-icon" id="loginPassword" placeholder="••••••••" autocomplete="current-password"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();authLogin();}">
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility('loginPassword')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+      </div>
+      <button class="auth-forgot-link" onclick="switchAuthTab('forgot')" type="button">ลืมรหัสผ่าน?</button>
+      <button class="auth-btn" onclick="authLogin()" id="loginSubmitBtn">เข้าสู่ระบบ</button>
+      <div class="auth-divider">หรือ</div>
+      <button class="auth-guest-btn" onclick="authGuest()">👁 เข้าชมในฐานะผู้เยี่ยมชม (ดูอย่างเดียว)</button>
+    </div>
+
+    <!-- Register Form — Firebase Firestore -->
+    <div id="authRegisterForm" class="auth-form" style="display:none;flex-direction:column">
+
+      <!-- ฟอร์มลงทะเบียน -->
+      <div id="fbRegFormSection" style="display:flex;flex-direction:column;gap:0">
+        <div class="auth-field">
+          <label class="auth-label">ชื่อ – นามสกุล <span style="color:var(--red)">*</span></label>
+          <input type="text" class="auth-input" id="fbRegName" placeholder="เช่น นายสมชาย ใจดี" autocomplete="name"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('fbRegPosition').focus();}">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">ตำแหน่ง <span style="color:var(--red)">*</span></label>
+          <input type="text" class="auth-input" id="fbRegPosition" placeholder="เช่น นักวิชาการโสตทัศนศึกษา"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('fbRegDept').focus();}">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">สังกัด <span style="color:var(--red)">*</span></label>
+          <div style="position:relative">
+            <select class="auth-input" id="fbRegDept" style="appearance:none;padding-right:32px;cursor:pointer">
+              <option value="">-- เลือกสังกัด --</option>
+              <option>สำนักงานมูลนิธิฯ</option>
+              <option>สถานีวิทยุโทรทัศน์ฯ</option>
+            </select>
+            <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;font-size:12px">▾</span>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">อีเมล <span style="color:var(--red)">*</span></label>
+          <input type="email" class="auth-input" id="fbRegEmail" placeholder="your@email.com" autocomplete="email"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('fbRegPassword').focus();}">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">รหัสผ่าน <span style="color:var(--red)">*</span></label>
+          <div class="password-wrapper">
+            <input type="password" class="auth-input has-icon" id="fbRegPassword" placeholder="อย่างน้อย 6 ตัวอักษร" autocomplete="new-password"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('fbRegConfirm').focus();}">
+            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('fbRegPassword')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">ยืนยันรหัสผ่าน <span style="color:var(--red)">*</span></label>
+          <div class="password-wrapper">
+            <input type="password" class="auth-input has-icon" id="fbRegConfirm" placeholder="••••••••" autocomplete="new-password"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();fbRegisterSubmit();}">
+            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('fbRegConfirm')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+        <div id="fbRegError" style="display:none;background:var(--red-light);color:#991b1b;border:1px solid #fca5a5;border-radius:var(--radius);padding:9px 12px;font-size:13px;font-weight:600;margin-bottom:4px"></div>
+        <button class="auth-btn" id="fbRegSubmitBtn" onclick="fbRegisterSubmit()">✅ ลงทะเบียนสมาชิก</button>
+        <div class="auth-divider">หรือ</div>
+        <button class="auth-guest-btn" onclick="authGuest()">👁 เข้าชมในฐานะผู้เยี่ยมชม (ดูอย่างเดียว)</button>
+      </div>
+
+      <!-- หน้าสำเร็จ -->
+      <div id="fbRegSuccessSection" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:.5rem 0">
+        <div style="font-size:48px;margin-bottom:.75rem">🎉</div>
+        <div style="font-size:17px;font-weight:800;color:var(--green);margin-bottom:6px">ลงทะเบียนสำเร็จ!</div>
+        <div id="fbRegSuccessMsg" style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:1.25rem"></div>
+        <button class="auth-btn" style="background:var(--green)" onclick="fbRegReset()">+ ลงทะเบียนคนต่อไป</button>
+      </div>
+
+    </div>
+
+    <!-- Forgot Password Form -->
+    <div id="authForgotForm" class="auth-form" style="display:none">
+
+      <!-- Step 1: กรอกอีเมล -->
+      <div id="forgotStep1">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.6;">
+          กรอกอีเมลที่ลงทะเบียนไว้ ระบบจะส่ง<strong>ลิงก์สำหรับตั้งรหัสผ่านใหม่</strong>ไปที่อีเมลของคุณ<br>
+          <span style="color:var(--text3);font-size:12px;">หากอีเมลนี้ไม่ได้ผูกกับระบบ Firebase ระบบจะสร้างรหัสชั่วคราวให้แทน</span>
+        </div>
+        <div class="auth-error" id="forgotError"></div>
+        <div class="auth-field">
+          <label class="auth-label">อีเมล</label>
+          <input type="email" class="auth-input" id="forgotEmail" placeholder="your@email.com" autocomplete="email"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();authRequestReset();}">
+        </div>
+        <button class="auth-btn" onclick="authRequestReset()" id="forgotSubmitBtn">ขอรหัสชั่วคราว</button>
+        <button class="auth-guest-btn" onclick="switchAuthTab('login')" style="margin-top:2px;">← กลับหน้าเข้าสู่ระบบ</button>
+      </div>
+
+      <!-- Step 2: กรอกรหัสชั่วคราว + ตั้ง password ใหม่ -->
+      <div id="forgotStep2" style="display:none">
+        <div id="forgotStep2Banner" style="font-size:13px;background:var(--amber-light);border:1px solid #f6cc70;border-radius:var(--radius);padding:8px 12px;margin-bottom:4px;line-height:1.6;color:#92400e;"></div>
+        <div class="auth-error" id="forgotStep2Error"></div>
+        <div class="auth-success" id="forgotStep2Success"></div>
+        <div class="auth-field">
+          <label class="auth-label">รหัสชั่วคราว (ได้รับจาก Admin)</label>
+          <input type="text" class="auth-input" id="forgotTempPass" placeholder="กรอกรหัสชั่วคราว" autocomplete="off"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('forgotNewPass').focus();}">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">รหัสผ่านใหม่ <span style="color:var(--red)">*</span></label>
+          <div class="password-wrapper">
+            <input type="password" class="auth-input has-icon" id="forgotNewPass" placeholder="อย่างน้อย 6 ตัวอักษร" autocomplete="new-password"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('forgotConfirmPass').focus();}">
+            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('forgotNewPass')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">ยืนยันรหัสผ่านใหม่ <span style="color:var(--red)">*</span></label>
+          <div class="password-wrapper">
+            <input type="password" class="auth-input has-icon" id="forgotConfirmPass" placeholder="••••••••" autocomplete="new-password"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();authChangePassword();}">
+            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('forgotConfirmPass')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+        <button class="auth-btn" onclick="authChangePassword()" id="changePassBtn">ตั้งรหัสผ่านใหม่</button>
+        <button class="auth-guest-btn" onclick="authBackToStep1()" style="margin-top:2px;">← ขอรหัสชั่วคราวใหม่</button>
+      </div>
+
+      <!-- Step 1b: แจ้งว่าส่งอีเมลลิงก์ตั้งรหัสผ่านใหม่แล้ว (Firebase) -->
+      <div id="forgotSentStep" style="display:none">
+        <div style="text-align:center;padding:.5rem 0 1rem">
+          <div style="font-size:44px;margin-bottom:.5rem">📧</div>
+          <div style="font-size:16px;font-weight:800;color:var(--green);margin-bottom:6px">ส่งอีเมลแล้ว!</div>
+          <div id="forgotSentMsg" style="font-size:13px;color:var(--text2);line-height:1.8"></div>
+        </div>
+        <button class="auth-btn" onclick="switchAuthTab('login')">← กลับหน้าเข้าสู่ระบบ</button>
+        <button class="auth-guest-btn" onclick="authBackToStep1()" style="margin-top:2px;">ยังไม่ได้รับอีเมล? ลองอีกครั้ง</button>
+      </div>
+
+    </div>
+
+  </div><!-- /.auth-box -->
+</div><!-- /.auth-overlay -->
+
+<!-- MODAL: Add/Edit -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">เพิ่มโครงการ</span>
+      <button class="btn btn-sm btn-icon" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="form-grid">
+        <div class="form-field full">
+          <label class="form-label">ชื่อโครงการ <span class="required">*</span></label>
+          <input type="text" id="fName" class="form-input" placeholder="ชื่อโครงการ...">
+        </div>
+        <div class="form-field">
+          <label class="form-label">ยุทธศาสตร์ <span class="required">*</span></label>
+          <select id="fStrategy" class="form-select">
+            <option value="1">ยุทธศาสตร์ที่ 1 — การพัฒนาการจัดการศึกษาทางไกล</option>
+            <option value="2">ยุทธศาสตร์ที่ 2 — การพัฒนาครูและโรงเรียนต้นทาง</option>
+            <option value="3">ยุทธศาสตร์ที่ 3 — การพัฒนาครูและโรงเรียนปลายทาง</option>
+            <option value="4">ยุทธศาสตร์ที่ 4 — การพัฒนาระบบการบริหารจัดการ</option>
+            <option value="5">งบบริหารสำนักงาน</option>
+          </select>
+        </div>
+        <div class="form-field full">
+          <label class="form-label">อนุกรรมการที่เกี่ยวข้อง</label>
+          <div class="com-dropdown-wrap" id="comDropdownWrap">
+            <button type="button" class="com-trigger" id="comTrigger" onclick="toggleComPanel()">
+              <span class="com-trigger-text" id="comTriggerText"><span class="com-placeholder">— เลือกอนุกรรมการที่เกี่ยวข้อง —</span></span>
+              <span class="com-trigger-arrow">▼</span>
+            </button>
+            <div class="com-panel" id="comPanel">
+              <div class="com-panel-inner">
+                <label class="com-option">
+                  <input type="checkbox" id="chkPolicy" value="นโยบายและแผนงาน" onchange="onComOptionChange(this)">
+                  <span class="com-option-name">อนุกรรมการด้านนโยบายและแผนงาน</span>
+                </label>
+                <label class="com-option">
+                  <input type="checkbox" id="chkAcademic" value="วิชาการ" onchange="onComOptionChange(this)">
+                  <span class="com-option-name">อนุกรรมการด้านวิชาการ</span>
+                </label>
+                <label class="com-option">
+                  <input type="checkbox" id="chkTech" value="เทคนิคและเทคโนโลยีดิจิทัล" onchange="onComOptionChange(this)">
+                  <span class="com-option-name">อนุกรรมการด้านเทคนิคและเทคโนโลยีดิจิทัล</span>
+                </label>
+                <label class="com-option">
+                  <input type="checkbox" id="chkHR" value="บริหารงานบุคคล" onchange="onComOptionChange(this)">
+                  <span class="com-option-name">อนุกรรมการด้านบริหารงานบุคคล</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">สถานะ</label>
+          <select id="fStatus" class="form-select">
+            <option value="progress">อยู่ระหว่างดำเนินการ</option>
+            <option value="done">ดำเนินการแล้วเสร็จ</option>
+            <option value="pending">ยังไม่เริ่ม</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">ไตรมาสที่รายงาน</label>
+          <select id="fQuarter" class="form-select">
+            <option value="all">ทุกไตรมาส</option>
+            <option value="1">ไตรมาส 1</option>
+            <option value="2" selected>ไตรมาส 2</option>
+            <option value="3">ไตรมาส 3</option>
+            <option value="4">ไตรมาส 4</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">งบประมาณที่อนุมัติ (บาท)</label>
+          <input type="number" id="fBudget" class="form-input" placeholder="0" min="0">
+          <div class="form-hint" id="budgetAutoNote" style="display:none">🔒 คำนวณอัตโนมัติจากตาราง 3.1 กิจกรรมและงบประมาณด้านล่าง</div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">งบประมาณที่ใช้ไป (บาท)</label>
+          <input type="number" id="fSpent" class="form-input" placeholder="0" min="0">
+          <div class="form-hint" id="spentAutoNote" style="display:none">🔒 คำนวณอัตโนมัติจากตาราง 3.1 กิจกรรมและงบประมาณด้านล่าง</div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">PO (บาท)</label>
+          <input type="number" id="fPO" class="form-input" placeholder="0" min="0">
+        </div>
+        <div class="form-field full">
+          <label class="form-label">👤 ผู้รับผิดชอบโครงการ / หน่วยงาน</label>
+          <input type="text" id="fOwner" class="form-input" placeholder="เช่น กลุ่มสารสนเทศ, ฝ่ายสารสนเทศและสื่อสารองค์กร...">
+        </div>
+
+        <div class="form-field full"><div class="form-section">1. วัตถุประสงค์</div></div>
+        <div class="form-field full">
+          <label class="form-label">วัตถุประสงค์ของโครงการ (เพิ่มได้หลายข้อ)</label>
+          <div class="kpi-list" id="objList"></div>
+          <div class="kpi-add-row">
+            <input type="text" id="objInput" placeholder="ตัวอย่าง: เพื่อสนับสนุนชุดกิจกรรมการเรียนรู้ (ใบงานและใบความรู้) สำหรับนักเรียน..." onkeydown="if(event.key==='Enter'){addObjective();event.preventDefault();}">
+            <button class="btn btn-sm" onclick="addObjective()">+ เพิ่ม</button>
+          </div>
+        </div>
+
+        <div class="form-field full"><div class="form-section">2. เป้าหมาย</div></div>
+        <div class="form-field full">
+          <label class="form-label">2.1 เป้าหมายเชิงปริมาณ</label>
+          <textarea id="fGoalQuant" class="form-textarea" rows="3" placeholder="ตัวอย่าง: จำนวนโรงเรียนขนาดเล็กที่ได้รับการสนับสนุนชุดกิจกรรมฯ 3 สังกัด ได้แก่ ..."></textarea>
+        </div>
+        <div class="form-field full">
+          <label class="form-label">2.2 เป้าหมายเชิงคุณภาพ (เพิ่มได้หลายข้อ)</label>
+          <div class="kpi-list" id="goalQualList"></div>
+          <div class="kpi-add-row">
+            <input type="text" id="goalQualInput" placeholder="ตัวอย่าง: นักเรียนมีความพึงพอใจในระดับดีขึ้นไปทุกรายการ" onkeydown="if(event.key==='Enter'){addGoalQual();event.preventDefault();}">
+            <button class="btn btn-sm" onclick="addGoalQual()">+ เพิ่ม</button>
+          </div>
+        </div>
+
+        <div class="form-field full"><div class="form-section">3. ผลการดำเนินงานโครงการ</div></div>
+        <div class="form-field full">
+          <label class="form-label">ผลการดำเนินงาน (สรุปภาพรวม)</label>
+          <textarea id="fResult" class="form-textarea" rows="3" placeholder="สรุปผลการดำเนินงาน กิจกรรมที่ดำเนินการแล้ว และกิจกรรมที่อยู่ระหว่างดำเนินการ..."></textarea>
+        </div>
+        <div class="form-field full">
+          <label class="form-label">3.1 กิจกรรมและงบประมาณ</label>
+          <div class="mini-table-wrap">
+            <table class="mini-table" id="activitiesTable">
+              <thead><tr><th style="width:40px">ที่</th><th>กิจกรรม</th><th style="width:130px">งบประมาณอนุมัติ</th><th style="width:130px">ใช้ไป</th><th style="width:130px">คงเหลือ</th><th style="width:34px"></th></tr></thead>
+              <tbody id="activitiesTableBody"></tbody>
+              <tfoot><tr><td colspan="2" style="text-align:right;font-weight:700">รวม</td><td id="actTotalBudget" style="font-weight:700"></td><td id="actTotalSpent" style="font-weight:700"></td><td id="actTotalRemain" style="font-weight:700"></td><td></td></tr></tfoot>
+            </table>
+          </div>
+          <button type="button" class="btn btn-sm" style="margin-top:7px" onclick="addActivity()">+ เพิ่มกิจกรรม</button>
+        </div>
+        <div class="form-field full">
+          <label class="form-label">3.2 การวัดและประเมินผล (ตัวชี้วัดโครงการ)</label>
+          <div class="mini-table-wrap">
+            <table class="mini-table" id="kpiTable">
+              <thead><tr><th style="width:40px">ที่</th><th>ตัวชี้วัดโครงการ</th><th style="width:220px">ค่าเป้าหมายที่ทำได้ (ไตรมาส 1–4)</th><th style="width:150px">ผลการดำเนินงาน</th><th style="width:34px"></th></tr></thead>
+              <tbody id="kpiTableBody"></tbody>
+            </table>
+          </div>
+          <button type="button" class="btn btn-sm" style="margin-top:7px" onclick="addKPI()">+ เพิ่มตัวชี้วัด</button>
+        </div>
+        <div class="form-field full"><div class="form-section">4–5. ปัญหา อุปสรรค และแนวทางแก้ไข</div></div>
+        <div class="form-field full">
+          <label class="form-label">ปัญหาและอุปสรรค</label>
+          <textarea id="fProblems" class="form-textarea" rows="2" placeholder="ระบุปัญหาและอุปสรรค..."></textarea>
+        </div>
+        <div class="form-field full">
+          <label class="form-label">แนวทางแก้ไข / ข้อเสนอแนะ</label>
+          <textarea id="fSolutions" class="form-textarea" rows="2" placeholder="ระบุแนวทางแก้ไข..."></textarea>
+        </div>
+        <div class="form-field full"><div class="form-section">✏️ ข้อมูลผู้แก้ไข</div></div>
+        <div class="form-field">
+          <label class="form-label">ผู้แก้ไข / อัปเดตข้อมูล</label>
+          <input type="text" id="fEditorName" class="form-input" readonly style="background:var(--surface2);color:var(--text3);cursor:default">
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">ดึงชื่อและตำแหน่งจากบัญชีที่เข้าสู่ระบบอัตโนมัติ</div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">แก้ไขล่าสุด</label>
+          <input type="text" id="fEditedAt" class="form-input" placeholder="— ระบบบันทึกให้อัตโนมัติ —" readonly style="background:var(--surface2);color:var(--text3);cursor:default">
+        </div>
+        <div class="form-field full"><div class="form-section">📸 รูปภาพประกอบการดำเนินงาน</div></div>
+        <div class="form-field full">
+          <label class="form-label">อัปโหลดรูปภาพ (สูงสุด 10 รูป, แต่ละรูปไม่เกิน 5MB)</label>
+          <div class="img-upload-zone" id="imgUploadZone"
+               ondragover="handleImgDragOver(event)" ondragleave="handleImgDragLeave(event)" ondrop="handleImgDrop(event)">
+            <input type="file" id="imgFileInput" accept="image/*" multiple onchange="handleImgSelect(event)">
+            <div class="img-upload-icon">🖼️</div>
+            <div class="img-upload-label">
+              <strong>คลิกเพื่อเลือกรูปภาพ</strong> หรือลากรูปมาวางที่นี่<br>
+              รองรับ JPG, PNG, GIF, WebP
+            </div>
+          </div>
+          <div class="img-preview-grid" id="imgPreviewGrid"></div>
+          <div id="imgCountInfo" style="display:none" class="img-count-badge">
+            📷 <span id="imgCountText">0 รูป</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveProject()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Detail -->
+<div class="modal-overlay" id="detailOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="detailTitle">รายละเอียดโครงการ</span>
+      <button class="btn btn-sm btn-icon" onclick="closeDetail()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeDetail()">ปิด</button>
+      <button class="btn btn-primary" id="detailEditBtn">✏️ แก้ไข</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Delete -->
+<div class="modal-overlay" id="deleteOverlay">
+  <div class="modal" style="width:min(420px,100%)">
+    <div class="modal-header">
+      <span class="modal-title" style="color:var(--red)">ยืนยันการลบ</span>
+      <button class="btn btn-sm btn-icon" onclick="document.getElementById('deleteOverlay').classList.remove('open')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);line-height:1.7">คุณต้องการลบโครงการ "<strong id="deleteName"></strong>" ใช่หรือไม่?<br>การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('deleteOverlay').classList.remove('open')">ยกเลิก</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">🗑 ลบโครงการ</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="if(event.target===this)closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="">
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+  <div class="lightbox-nav">
+    <button onclick="lightboxNav(-1)">◀ ก่อนหน้า</button>
+    <button onclick="lightboxNav(1)">ถัดไป ▶</button>
+  </div>
+</div>
+
+<div id="initLoadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(244,246,249,.92);backdrop-filter:blur(8px);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+  <div style="width:44px;height:44px;border:4px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>
+  <div style="font-size:14px;font-weight:600;color:var(--text2)">กำลังโหลดข้อมูลจาก Google Sheet...</div>
+  <div style="font-size:12px;color:var(--text3)">รวมรูปภาพประกอบโครงการทั้งหมด</div>
+</div>
+
+
+
+<!-- ===== PDF EXPORT MODAL ===== -->
+
+<div class="pdf-modal-overlay" id="pdfModalOverlay">
+  <div class="pdf-modal">
+    <div class="pdf-modal-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>
+        <span class="pdf-modal-title">Export รายงาน PDF</span>
+      </div>
+      <button class="pdf-modal-close" onclick="closePdfModal()">✕</button>
+    </div>
+    <div class="pdf-modal-body">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:14px">เลือกประเภทรายงานที่ต้องการ Export เป็น PDF</div>
+
+      <div class="pdf-option selected" id="pdfOpt1" onclick="selectPdfOpt(1)">
+        <div class="pdf-option-icon">📊</div>
+        <div>
+          <div class="pdf-option-title">รายงานสรุปภาพรวมยุทธศาสตร์</div>
+          <div class="pdf-option-desc">สรุปผลการดำเนินงานรายยุทธศาสตร์ทั้ง 5 ยุทธศาสตร์ · งบประมาณ · สถานะโครงการ · ตารางสรุปรวม</div>
+        </div>
+      </div>
+
+      <div class="pdf-option" id="pdfOpt2" onclick="selectPdfOpt(2)">
+        <div class="pdf-option-icon">📋</div>
+        <div>
+          <div class="pdf-option-title">รายงานสรุปรายโครงการ</div>
+          <div class="pdf-option-desc">รายละเอียดผลการดำเนินงานแต่ละโครงการ · ผลที่ได้รับ · KPI · ปัญหาและแนวทางแก้ไข</div>
+        </div>
+      </div>
+
+      <div class="pdf-option" id="pdfOpt3" onclick="selectPdfOpt(3)">
+        <div class="pdf-option-icon">📑</div>
+        <div>
+          <div class="pdf-option-title">รายงานฉบับสมบูรณ์ (ภาพรวม + รายโครงการ)</div>
+          <div class="pdf-option-desc">รวมทั้งภาพรวมยุทธศาสตร์และรายละเอียดทุกโครงการในฉบับเดียว</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <label style="font-size:13px;font-weight:600;color:var(--text2)">ไตรมาสที่ต้องการรายงาน</label>
+        <select class="pdf-quarter-select" id="pdfQuarterSel">
+          <option value="all">ทุกไตรมาส (ปีงบประมาณ 2569)</option>
+          <option value="1">ไตรมาส 1 (ต.ค.–ธ.ค. 68)</option>
+          <option value="2">ไตรมาส 2 (ม.ค.–มี.ค. 69)</option>
+          <option value="3">ไตรมาส 3 (เม.ย.–มิ.ย. 69)</option>
+          <option value="4">ไตรมาส 4 (ก.ค.–ก.ย. 69)</option>
+        </select>
+
+        <div style="margin-top:10px">
+          <label style="font-size:13px;font-weight:600;color:var(--text2)">ยุทธศาสตร์ (สำหรับรายงานรายโครงการ)</label>
+          <select class="pdf-quarter-select" id="pdfStrategySel" style="margin-top:6px">
+            <option value="all">ทุกยุทธศาสตร์</option>
+            <option value="1">ยุทธศาสตร์ที่ 1 – การพัฒนาการจัดการศึกษาทางไกล</option>
+            <option value="2">ยุทธศาสตร์ที่ 2 – การพัฒนาครูและโรงเรียนต้นทาง</option>
+            <option value="3">ยุทธศาสตร์ที่ 3 – การพัฒนาครูและโรงเรียนปลายทาง</option>
+            <option value="4">ยุทธศาสตร์ที่ 4 – การพัฒนาระบบการบริหารจัดการ</option>
+            <option value="5">งบบริหารสำนักงาน</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pdf-progress" id="pdfProgress">
+        <div id="pdfProgressText">⏳ กำลังสร้างรายงาน PDF...</div>
+        <div class="pdf-progress-bar-track">
+          <div class="pdf-progress-bar-fill" id="pdfProgressBar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pdf-modal-footer">
+      <button class="pdf-cancel-btn" onclick="closePdfModal()">ยกเลิก</button>
+      <button class="pdf-gen-btn" id="pdfGenBtn" onclick="generatePDF()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        สร้าง PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Save Success Popup -->
+<div class="save-popup-overlay" id="savePopupOverlay">
+  <div class="save-popup">
+    <div class="save-popup-icon">✅</div>
+    <div class="save-popup-title" id="savePopupTitle">บันทึกสำเร็จ!</div>
+    <div class="save-popup-msg" id="savePopupMsg">ข้อมูลโครงการได้รับการบันทึกเรียบร้อยแล้ว</div>
+    <button class="save-popup-btn" onclick="closeSavePopup()">ตกลง</button>
+  </div>
+</div>
+
+
+
+<!-- ══ Firebase Auth + Firestore ══ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
